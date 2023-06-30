@@ -3,9 +3,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: example
-    binary: example
-    main: ./cmd/example
+  - id: data-aggregation-api
+    binary: data-aggregation-api
+    main: ./cmd/data-aggregation-api
     env:
       - CGO_ENABLED=0
     goos:
