@@ -19,7 +19,6 @@ var (
 
 type Config struct {
 	Datacenter             string
-	InventoryURL           string
 	NetboxURL              string
 	NetboxAPIKey           string
 	LdapURL                string
@@ -37,9 +36,7 @@ type Config struct {
 func setDefaults() {
 	viper.SetDefault("ListenAddress", defaultListenAddress)
 	viper.SetDefault("ListenPort", defaultListenPort)
-	viper.SetDefault("Debug", false)
 	viper.SetDefault("Datacenter", "")
-	viper.SetDefault("InventoryURL", "")
 	viper.SetDefault("NetboxURL", "")
 	viper.SetDefault("NetboxAPIKey", "")
 	viper.SetDefault("BuildInterval", time.Minute)
