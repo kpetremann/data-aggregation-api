@@ -1,10 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 	"time"
-
-	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/viper"
 )
@@ -77,7 +76,9 @@ func LoadConfig() error {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Error().Err(err).Send()
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok { //nolint:errorlint  // failing only if invalid file
+			return fmt.Errorf("invalid config file: %w", err)
+		}
 	}
 
 	if err := viper.Unmarshal(&Cfg); err != nil {
