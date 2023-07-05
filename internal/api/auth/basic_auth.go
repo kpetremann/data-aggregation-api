@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -11,6 +12,45 @@ const (
 	wwwAuthenticate      = "WWW-Authenticate"
 	realm                = `Basic realm="restricted"`
 )
+
+type authMode int
+
+const (
+	NoAuth authMode = iota
+	LDAPMode
+)
+
+type BasicAuth struct {
+	mode     authMode
+	ldapAuth *LDAPAuth
+}
+
+func NewBasicAuth() BasicAuth { return BasicAuth{mode: NoAuth} }
+
+func (b *BasicAuth) SetMode(mode authMode) { b.mode = mode }
+
+func (b *BasicAuth) ConfigureLdap(ldap *LDAPAuth) error {
+	if ldap == nil {
+		return errors.New("LDAP configuration is missing")
+	}
+	b.ldapAuth = ldap
+
+	return nil
+}
+
+func (b *BasicAuth) Wrap(next httprouter.Handle) httprouter.Handle {
+	switch b.mode {
+	case NoAuth:
+		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { next(w, r, ps) }
+	case LDAPMode:
+		return BasicAuthLDAP(b.ldapAuth, next)
+	default:
+		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			http.Error(w, "authentication issue: bad server configuration", http.StatusInternalServerError)
+		}
+	}
+
+}
 
 // BasicAuthLDAP is a middleware wrapping the target HTTP HandlerFunc.
 // It retrieves BasicAuth credentials and authenticate against LDAP.

@@ -31,6 +31,7 @@ type Config struct {
 		APIKey string
 	}
 	LDAP struct {
+		Enabled            bool
 		URL                string
 		BaseDN             string
 		BindDN             string
@@ -56,6 +57,7 @@ func setDefaults() {
 	viper.SetDefault("Build.Interval", time.Minute)
 	viper.SetDefault("Build.AllDevicesMustBuild", false)
 
+	viper.SetDefault("LDAP.Enabled", false)
 	viper.SetDefault("LDAP.URL", "")
 	viper.SetDefault("LDAP.BaseDN", "")
 	viper.SetDefault("LDAP.BindDN", "")
