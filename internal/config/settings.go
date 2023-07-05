@@ -44,6 +44,7 @@ func setDefaults() {
 	viper.SetDefault("LdapBindDN", "")
 	viper.SetDefault("LdapPassword", "")
 	viper.SetDefault("LdapBaseDN", "")
+	viper.SetDefault("LdapInsecureSkipVerify", false)
 	viper.SetDefault("AllDevicesMustBuild", false)
 	viper.SetDefault("LogLevel", "info")
 }
