@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -11,6 +12,7 @@ import (
 const (
 	defaultListenAddress = "0.0.0.0"
 	defaultListenPort    = 8080
+	localPath            = "."
 )
 
 var (
@@ -18,42 +20,58 @@ var (
 )
 
 type Config struct {
-	Datacenter             string
-	NetboxURL              string
-	NetboxAPIKey           string
-	LdapURL                string
-	LdapBindDN             string
-	LdapPassword           string
-	LdapBaseDN             string
-	LogLevel               string
-	ListenAddress          string
-	ListenPort             int
-	BuildInterval          time.Duration
-	LdapInsecureSkipVerify bool
-	AllDevicesMustBuild    bool
+	LogLevel   string
+	Datacenter string
+
+	API struct {
+		ListenAddress string
+		ListenPort    int
+	}
+	NetBox struct {
+		URL    string
+		APIKey string
+	}
+	LDAP struct {
+		URL                string
+		BaseDN             string
+		BindDN             string
+		Password           string
+		InsecureSkipVerify bool
+	}
+	Build struct {
+		Interval            time.Duration
+		AllDevicesMustBuild bool
+	}
 }
 
 func setDefaults() {
-	viper.SetDefault("ListenAddress", defaultListenAddress)
-	viper.SetDefault("ListenPort", defaultListenPort)
 	viper.SetDefault("Datacenter", "")
-	viper.SetDefault("NetboxURL", "")
-	viper.SetDefault("NetboxAPIKey", "")
-	viper.SetDefault("BuildInterval", time.Minute)
-	viper.SetDefault("LdapURL", "")
-	viper.SetDefault("LdapBindDN", "")
-	viper.SetDefault("LdapPassword", "")
-	viper.SetDefault("LdapBaseDN", "")
-	viper.SetDefault("LdapInsecureSkipVerify", false)
-	viper.SetDefault("AllDevicesMustBuild", false)
 	viper.SetDefault("LogLevel", "info")
+
+	viper.SetDefault("API.ListenAddress", defaultListenAddress)
+	viper.SetDefault("API.ListenPort", defaultListenPort)
+
+	viper.SetDefault("NetBox.URL", "")
+	viper.SetDefault("NetBox.APIKey", "")
+
+	viper.SetDefault("Build.Interval", time.Minute)
+	viper.SetDefault("Build.AllDevicesMustBuild", false)
+
+	viper.SetDefault("LDAP.URL", "")
+	viper.SetDefault("LDAP.BaseDN", "")
+	viper.SetDefault("LDAP.BindDN", "")
+	viper.SetDefault("LDAP.Password", "")
+	viper.SetDefault("LDAP.InsecureSkipVerify", false)
 }
 
 func LoadConfig() error {
 	viper.SetConfigName("settings")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(localPath)
 	viper.SetConfigType("yaml")
 	viper.SetEnvPrefix("DAAPI")
+
+	replacer := strings.NewReplacer(".", "_")
+	viper.SetEnvKeyReplacer(replacer)
 
 	setDefaults()
 	viper.AutomaticEnv()

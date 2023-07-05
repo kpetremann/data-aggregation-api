@@ -56,7 +56,7 @@ func run() error {
 	// TODO: be able to close goroutine when the context is closed (graceful shutdown)
 	go job.StartBuildLoop(&deviceRepo, &reports)
 
-	router.NewManager(&deviceRepo, &reports).ListenAndServe(ctx, config.Cfg.ListenAddress, config.Cfg.ListenPort)
+	router.NewManager(&deviceRepo, &reports).ListenAndServe(ctx, config.Cfg.API.ListenAddress, config.Cfg.API.ListenPort)
 
 	return nil
 }
