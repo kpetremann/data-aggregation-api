@@ -54,7 +54,7 @@ type RoutePolicyTerm struct { //nolint:govet // for readability
 	SetASPathPrependRepeat uint8               `json:"set_as_path_prepend_repeat" validate:"omitempty"`
 	SetCommunity           string              `json:"set_community"              validate:"omitempty"`
 	SetLargeCommunity      string              `json:"set_large_community"        validate:"omitempty"`
-	SetNextHop             net.IP              `json:"set_next_hop"               validate:"omitempty"`
+	SetNextHop             *net.IP             `json:"set_next_hop"               validate:"omitempty"`
 	SetLocalPref           uint32              `json:"set_local_pref"             validate:"omitempty"`
 	SetMetric              uint32              `json:"set_metric"                 validate:"omitempty"`
 }

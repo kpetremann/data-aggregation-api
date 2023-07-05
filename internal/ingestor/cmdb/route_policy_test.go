@@ -81,7 +81,7 @@ func TestPrecomputeRoutePolicies(t *testing.T) {
 								SetLargeCommunity:      "",
 								SetASPathPrependASN:    nil,
 								SetASPathPrependRepeat: 0,
-								SetNextHop:             net.IP{},
+								SetNextHop:             nil,
 							},
 						},
 					},
@@ -185,7 +185,7 @@ func TestPrecomputeRoutePolicies(t *testing.T) {
 								SetLargeCommunity:      "",
 								SetASPathPrependASN:    nil,
 								SetASPathPrependRepeat: 0,
-								SetNextHop:             net.IP(nil),
+								SetNextHop:             nil,
 							},
 							{
 								Sequence:    2,
@@ -211,7 +211,7 @@ func TestPrecomputeRoutePolicies(t *testing.T) {
 								SetLargeCommunity:      "",
 								SetASPathPrependASN:    &common.ASN{Number: &as65000, Organization: "Lab-65000"},
 								SetASPathPrependRepeat: repeatASN3,
-								SetNextHop: net.IP{
+								SetNextHop: &net.IP{
 									0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1,
 								},
 							},

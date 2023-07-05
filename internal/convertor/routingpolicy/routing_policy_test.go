@@ -25,7 +25,6 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 	var seq2 = "2"
 	var localPref100 uint32 = 100
 	var localPref1000 uint32 = 1000
-	var stringNil = openconfig.UnionString("<nil>")
 	var nexthopLocalhost = openconfig.UnionString("127.0.0.1")
 	var repeatASN3 uint8 = 3
 
@@ -111,7 +110,7 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 					SetLargeCommunity:      "",
 					SetASPathPrependASN:    nil,
 					SetASPathPrependRepeat: 0,
-					SetNextHop:             net.IP(nil),
+					SetNextHop:             nil,
 				},
 				{
 					Sequence:    2,
@@ -137,7 +136,7 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 					SetLargeCommunity:      "",
 					SetASPathPrependASN:    &common.ASN{Number: &as65000, Organization: "Lab-65000"},
 					SetASPathPrependRepeat: repeatASN3,
-					SetNextHop: net.IP{
+					SetNextHop: &net.IP{
 						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 127, 0, 0, 1,
 					},
 				},
@@ -195,7 +194,7 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 								SetCommunity:   nil,
 								SetLocalPref:   nil,
 								SetMed:         nil,
-								SetNextHop:     &stringNil,
+								SetNextHop:     nil,
 								SetRouteOrigin: openconfig.BgpTypes_BgpOriginAttrType_UNSET,
 							},
 							PolicyResult: openconfig.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE,

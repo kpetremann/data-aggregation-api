@@ -87,7 +87,7 @@ func getStatementActions(term *routingpolicy.RoutePolicyTerm) (*openconfig.Routi
 		actions.BgpActions.SetLocalPref = &term.SetLocalPref
 	}
 
-	if term.SetNextHop.String() != "" {
+	if term.SetNextHop != nil {
 		nextHop := openconfig.UnionString(term.SetNextHop.String())
 		actions.BgpActions.SetNextHop = &nextHop
 	}
