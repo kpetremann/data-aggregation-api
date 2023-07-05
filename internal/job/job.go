@@ -45,7 +45,7 @@ func compute(reportCh chan<- report.Message, ingestorRepo *repository.Assets, de
 	wg := sync.WaitGroup{}
 
 	failed := false
-	var mutex *sync.Mutex
+	var mutex sync.Mutex
 
 	for _, dev := range ingestorRepo.DeviceInventory {
 		if devices[dev.Hostname] == nil {
