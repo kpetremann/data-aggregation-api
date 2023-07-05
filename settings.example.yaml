@@ -6,6 +6,7 @@ API:
   ListenPort: 1234
 
 LDAP:
+  Enabled: true
   InsecureSkipVerify: "false"
   URL: "ldaps://URL.local"
   BindDN: "cn=<user>,OU=<ou>,DC=<local>"
