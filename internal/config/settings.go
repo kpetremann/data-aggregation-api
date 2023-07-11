@@ -31,12 +31,12 @@ type Config struct {
 		APIKey string
 	}
 	LDAP struct {
-		Enabled            bool
 		URL                string
 		BaseDN             string
 		BindDN             string
 		Password           string
 		InsecureSkipVerify bool
+		Enabled            bool
 	}
 	Build struct {
 		Interval            time.Duration

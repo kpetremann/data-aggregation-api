@@ -34,7 +34,7 @@ func NewManager(deviceRepo DevicesRepository, reports *report.Repository) *Manag
 }
 
 // ListenAndServe starts to serve Web API requests.
-func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) {
+func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) error {
 	defer func() {
 		log.Warn().Msg("Shutdown.")
 	}()
@@ -46,7 +46,9 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	withAuth := auth.NewBasicAuth()
 	if config.Cfg.LDAP.Enabled {
 		ldap := auth.NewLDAPAuth(config.Cfg.LDAP.URL, config.Cfg.LDAP.BindDN, config.Cfg.LDAP.Password, config.Cfg.LDAP.BaseDN, tlsConfig)
-		withAuth.ConfigureLdap(ldap)
+		if err := withAuth.ConfigureLdap(ldap); err != nil {
+			return fmt.Errorf("failed to configure: %w", err)
+		}
 		withAuth.SetMode(auth.LDAPMode)
 	}
 
@@ -75,4 +77,6 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	if err := httpServer.Shutdown(context.Background()); err != nil {
 		log.Error().Err(err).Send()
 	}
+
+	return nil
 }
