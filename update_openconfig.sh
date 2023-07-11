@@ -1,6 +1,6 @@
 set -e
 
-VERSION=v1.0.0
+VERSION=v2.3.0
 
 rm -rf internal/models/openconfig/*
 rm .build -rf
@@ -32,7 +32,7 @@ go run generator/generator.go -path=public,deps -output_file=openconfig/oc.go \
   public/release/models/policy/openconfig-routing-policy.yang \
   public/release/models/bgp/openconfig-bgp-policy.yang
 
-mv openconfig/* ../../internal/models/openconfig/
+mv openconfig/* ../../internal/model/openconfig/
 
 cd ../../
 rm .build -rf
