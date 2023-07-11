@@ -125,8 +125,8 @@ func getStatementConditions(term *routingpolicy.RoutePolicyTerm) *openconfig.Rou
 	return &conditions
 }
 
-func extractPolicyStatements(terms []*routingpolicy.RoutePolicyTerm) (map[string]*openconfig.RoutingPolicy_PolicyDefinition_Statement, error) {
-	var statements = make(map[string]*openconfig.RoutingPolicy_PolicyDefinition_Statement)
+func extractPolicyStatements(terms []*routingpolicy.RoutePolicyTerm) (*openconfig.RoutingPolicy_PolicyDefinition_Statement_OrderedMap, error) {
+	var statements openconfig.RoutingPolicy_PolicyDefinition_Statement_OrderedMap
 
 	for _, term := range terms {
 		name := strconv.Itoa(term.Sequence)
@@ -140,10 +140,12 @@ func extractPolicyStatements(terms []*routingpolicy.RoutePolicyTerm) (map[string
 			Actions:    actions,
 		}
 
-		statements[name] = &statement
+		if err := statements.Append(&statement); err != nil {
+			return nil, err
+		}
 	}
 
-	return statements, nil
+	return &statements, nil
 }
 
 // RoutePoliciesToOpenconfig converts precomputed CMDB data to OpenConfig.
