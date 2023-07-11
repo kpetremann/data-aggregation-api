@@ -21,8 +21,8 @@ const (
 )
 
 type BasicAuth struct {
-	mode     authMode
 	ldapAuth *LDAPAuth
+	mode     authMode
 }
 
 func NewBasicAuth() BasicAuth { return BasicAuth{mode: NoAuth} }
@@ -49,7 +49,6 @@ func (b *BasicAuth) Wrap(next httprouter.Handle) httprouter.Handle {
 			http.Error(w, "authentication issue: bad server configuration", http.StatusInternalServerError)
 		}
 	}
-
 }
 
 // BasicAuthLDAP is a middleware wrapping the target HTTP HandlerFunc.
