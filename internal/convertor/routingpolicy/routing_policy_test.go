@@ -144,6 +144,74 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 		},
 	}
 
+	var wantedPolicy openconfig.RoutingPolicy_PolicyDefinition_Statement_OrderedMap
+	_ = wantedPolicy.Append(
+		&openconfig.RoutingPolicy_PolicyDefinition_Statement{
+			Actions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions{
+				BgpActions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions{
+					SetAsPathPrepend: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetAsPathPrepend{
+						Asn:     nil,
+						RepeatN: nil,
+					},
+					SetCommunity:   nil,
+					SetLocalPref:   nil,
+					SetMed:         nil,
+					SetNextHop:     nil,
+					SetRouteOrigin: openconfig.BgpTypes_BgpOriginAttrType_UNSET,
+				},
+				PolicyResult: openconfig.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE,
+			},
+			Conditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions{
+				BgpConditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions_BgpConditions{
+					CommunitySet: nil,
+					LocalPrefEq:  nil,
+				},
+				InstallProtocolEq: 0,
+				MatchPrefixSet:    nil,
+			},
+			Name: &seq1,
+		},
+	)
+	_ = wantedPolicy.Append(
+		&openconfig.RoutingPolicy_PolicyDefinition_Statement{
+			Actions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions{
+				BgpActions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions{
+					SetAsPathPrepend: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetAsPathPrepend{
+						Asn:     &as65000,
+						RepeatN: &repeatASN3,
+					},
+					SetCommunity: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity{
+						Inline: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline{
+							Communities: []openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
+								openconfig.UnionString("65000:12345"),
+							},
+						},
+						Method:  openconfig.SetCommunity_Method_INLINE,
+						Options: openconfig.BgpPolicy_BgpSetCommunityOptionType_REPLACE,
+					},
+					SetLocalPref:   &localPref1000,
+					SetMed:         openconfig.UnionUint32(123),
+					SetNextHop:     &nexthopLocalhost,
+					SetRouteOrigin: openconfig.BgpTypes_BgpOriginAttrType_IGP,
+				},
+				PolicyResult: 1,
+			},
+			Conditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions{
+				BgpConditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions_BgpConditions{
+					AfiSafiIn:    []openconfig.E_BgpTypes_AFI_SAFI_TYPE(nil),
+					CommunitySet: &serverCommunitySetName,
+					LocalPrefEq:  &localPref100,
+				},
+				InstallProtocolEq: 1,
+				MatchPrefixSet: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions_MatchPrefixSet{
+					MatchSetOptions: 0,
+					PrefixSet:       &serverVlanProdPFName,
+				},
+			},
+			Name: &seq2,
+		},
+	)
+
 	want := &openconfig.RoutingPolicy{
 		DefinedSets: &openconfig.RoutingPolicy_DefinedSets{
 			BgpDefinedSets: &openconfig.RoutingPolicy_DefinedSets_BgpDefinedSets{
@@ -182,71 +250,8 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 		},
 		PolicyDefinition: map[string]*openconfig.RoutingPolicy_PolicyDefinition{
 			"LAN:IN": {
-				Name: &pfLanInName,
-				Statement: map[string]*openconfig.RoutingPolicy_PolicyDefinition_Statement{
-					"1": {
-						Actions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions{
-							BgpActions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions{
-								SetAsPathPrepend: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetAsPathPrepend{
-									Asn:     nil,
-									RepeatN: nil,
-								},
-								SetCommunity:   nil,
-								SetLocalPref:   nil,
-								SetMed:         nil,
-								SetNextHop:     nil,
-								SetRouteOrigin: openconfig.BgpTypes_BgpOriginAttrType_UNSET,
-							},
-							PolicyResult: openconfig.RoutingPolicy_PolicyResultType_ACCEPT_ROUTE,
-						},
-						Conditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions{
-							BgpConditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions_BgpConditions{
-								CommunitySet: nil,
-								LocalPrefEq:  nil,
-							},
-							InstallProtocolEq: 0,
-							MatchPrefixSet:    nil,
-						},
-						Name: &seq1,
-					},
-					"2": {
-						Actions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions{
-							BgpActions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions{
-								SetAsPathPrepend: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetAsPathPrepend{
-									Asn:     &as65000,
-									RepeatN: &repeatASN3,
-								},
-								SetCommunity: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity{
-									Inline: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline{
-										Communities: []openconfig.RoutingPolicy_PolicyDefinition_Statement_Actions_BgpActions_SetCommunity_Inline_Communities_Union{
-											openconfig.UnionString("65000:12345"),
-										},
-									},
-									Method:  openconfig.SetCommunity_Method_INLINE,
-									Options: openconfig.BgpPolicy_BgpSetCommunityOptionType_REPLACE,
-								},
-								SetLocalPref:   &localPref1000,
-								SetMed:         openconfig.UnionUint32(123),
-								SetNextHop:     &nexthopLocalhost,
-								SetRouteOrigin: openconfig.BgpTypes_BgpOriginAttrType_IGP,
-							},
-							PolicyResult: 1,
-						},
-						Conditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions{
-							BgpConditions: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions_BgpConditions{
-								AfiSafiIn:    []openconfig.E_BgpTypes_AFI_SAFI_TYPE(nil),
-								CommunitySet: &serverCommunitySetName,
-								LocalPrefEq:  &localPref100,
-							},
-							InstallProtocolEq: 1,
-							MatchPrefixSet: &openconfig.RoutingPolicy_PolicyDefinition_Statement_Conditions_MatchPrefixSet{
-								MatchSetOptions: 0,
-								PrefixSet:       &serverVlanProdPFName,
-							},
-						},
-						Name: &seq2,
-					},
-				},
+				Name:      &pfLanInName,
+				Statement: &wantedPolicy,
 			},
 		},
 	}
@@ -256,7 +261,7 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 		t.Errorf("failed to convert routing policies to OpenConfig")
 	}
 
-	if diff := cmp.Diff(ret, want); diff != "" {
+	if diff := cmp.Diff(ret, want, cmp.AllowUnexported(openconfig.RoutingPolicy_PolicyDefinition_Statement_OrderedMap{})); diff != "" {
 		t.Errorf("unexpected diff for '%s': %s\n", "BGP integration test", diff)
 	}
 }
