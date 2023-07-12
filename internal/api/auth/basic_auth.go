@@ -40,7 +40,7 @@ func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
 		InsecureSkipVerify: cfg.LDAP.InsecureSkipVerify, //nolint:gosec // configurable on purpose
 	}
 	ldap := NewLDAPAuth(cfg.LDAP.URL, cfg.LDAP.BindDN, cfg.LDAP.Password, cfg.LDAP.BaseDN, tlsConfig)
-	if err := b.ConfigureLdap(ldap); err != nil {
+	if err := b.configureLdap(ldap); err != nil {
 		return b, fmt.Errorf("failed to configure the request authenticator: %w", err)
 	}
 	b.mode = ldapMode
@@ -48,7 +48,7 @@ func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
 	return b, nil
 }
 
-func (b *BasicAuth) ConfigureLdap(ldap *LDAPAuth) error {
+func (b *BasicAuth) configureLdap(ldap *LDAPAuth) error {
 	if ldap == nil {
 		return errors.New("LDAP configuration is missing")
 	}
