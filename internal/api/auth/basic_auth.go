@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"crypto/tls"
 	"errors"
+	"fmt"
 	"net/http"
 
+	"github.com/criteo/data-aggregation-api/internal/config"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 )
@@ -26,7 +29,24 @@ type BasicAuth struct {
 	mode     authMode
 }
 
-func NewBasicAuth(mode authMode) BasicAuth { return BasicAuth{mode: mode} }
+func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
+	b := BasicAuth{mode: NoAuth}
+
+	if cfg.LDAP == nil {
+		return b, nil
+	}
+
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: cfg.LDAP.InsecureSkipVerify, //nolint:gosec // configurable on purpose
+	}
+	ldap := NewLDAPAuth(cfg.LDAP.URL, cfg.LDAP.BindDN, cfg.LDAP.Password, cfg.LDAP.BaseDN, tlsConfig)
+	if err := b.ConfigureLdap(ldap); err != nil {
+		return b, fmt.Errorf("failed to configure the request authenticator: %w", err)
+	}
+	b.mode = LDAPMode
+
+	return b, nil
+}
 
 func (b *BasicAuth) ConfigureLdap(ldap *LDAPAuth) error {
 	if ldap == nil {

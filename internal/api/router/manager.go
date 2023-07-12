@@ -2,7 +2,6 @@ package router
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 
@@ -39,20 +38,9 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 		log.Warn().Msg("Shutdown.")
 	}()
 
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: config.Cfg.LDAP.InsecureSkipVerify, //nolint:gosec // configurable on purpose
-	}
-
-	var withAuth auth.BasicAuth
-	if config.Cfg.LDAP.Enabled {
-		withAuth = auth.NewBasicAuth(auth.LDAPMode)
-
-		ldap := auth.NewLDAPAuth(config.Cfg.LDAP.URL, config.Cfg.LDAP.BindDN, config.Cfg.LDAP.Password, config.Cfg.LDAP.BaseDN, tlsConfig)
-		if err := withAuth.ConfigureLdap(ldap); err != nil {
-			return fmt.Errorf("failed to configure the request authenticator: %w", err)
-		}
-	} else {
-		withAuth = auth.NewBasicAuth(auth.NoAuth)
+	withAuth, err := auth.NewBasicAuth(config.Cfg.Authentication)
+	if err != nil {
+		return err
 	}
 
 	router := httprouter.New()

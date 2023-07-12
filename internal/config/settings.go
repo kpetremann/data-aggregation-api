@@ -30,18 +30,25 @@ type Config struct {
 		URL    string
 		APIKey string
 	}
-	LDAP struct {
-		URL                string
-		BaseDN             string
-		BindDN             string
-		Password           string
-		InsecureSkipVerify bool
-		Enabled            bool
-	}
+
+	Authentication AuthConfig
+
 	Build struct {
 		Interval            time.Duration
 		AllDevicesMustBuild bool
 	}
+}
+
+type AuthConfig struct {
+	LDAP *LDAPConfig
+}
+
+type LDAPConfig struct {
+	URL                string
+	BaseDN             string
+	BindDN             string
+	Password           string
+	InsecureSkipVerify bool
 }
 
 func setDefaults() {
