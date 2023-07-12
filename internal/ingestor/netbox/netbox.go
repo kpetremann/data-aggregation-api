@@ -25,7 +25,7 @@ func NewGetRequest(url string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Token "+config.Cfg.NetboxAPIKey)
+	req.Header.Set("Authorization", "Token "+config.Cfg.NetBox.APIKey)
 
 	return req, err
 }
@@ -47,7 +47,7 @@ func Get[R any](endpoint string, out *NetboxResponse[R]) error {
 		datacenterFilter = "&site_group=" + strings.ToUpper(config.Cfg.Datacenter)
 	}
 
-	url := config.Cfg.NetboxURL + endpoint + sep + "limit=0&ordering=id" + datacenterFilter
+	url := config.Cfg.NetBox.URL + endpoint + sep + "limit=0&ordering=id" + datacenterFilter
 	log.Info().Str(endpointKey, endpoint).Msgf("Get %s", url)
 
 	// Get all pages

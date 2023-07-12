@@ -107,7 +107,7 @@ func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.P
 
 	// We stop here if the user decided all device configuration must have been built with success
 	if precomputeError != nil {
-		if config.Cfg.AllDevicesMustBuild {
+		if config.Cfg.Build.AllDevicesMustBuild {
 			return nil, stats, errors.New("failed: all devices must build")
 		}
 		reportCh <- report.Message{
@@ -162,6 +162,6 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 		close(reportCh)
 		wg.Wait()
 
-		time.Sleep(config.Cfg.BuildInterval)
+		time.Sleep(config.Cfg.Build.Interval)
 	}
 }

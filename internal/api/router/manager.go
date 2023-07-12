@@ -40,9 +40,9 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	}()
 
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: config.Cfg.LdapInsecureSkipVerify, //nolint:gosec // configurable on purpose
+		InsecureSkipVerify: config.Cfg.LDAP.InsecureSkipVerify, //nolint:gosec // configurable on purpose
 	}
-	ldap := auth.NewLDAPAuth(config.Cfg.LdapURL, config.Cfg.LdapBindDN, config.Cfg.LdapPassword, config.Cfg.LdapBaseDN, tlsConfig)
+	ldap := auth.NewLDAPAuth(config.Cfg.LDAP.URL, config.Cfg.LDAP.BindDN, config.Cfg.LDAP.Password, config.Cfg.LDAP.BaseDN, tlsConfig)
 
 	router := httprouter.New()
 
