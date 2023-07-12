@@ -17,11 +17,11 @@ const (
 	realm                = `Basic realm="restricted"`
 )
 
-type authMode int
+type authMode string
 
 const (
-	NoAuth authMode = iota
-	LDAPMode
+	noAuth   authMode = "None"
+	ldapMode authMode = "LDAP"
 )
 
 type BasicAuth struct {
@@ -30,7 +30,7 @@ type BasicAuth struct {
 }
 
 func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
-	b := BasicAuth{mode: NoAuth}
+	b := BasicAuth{mode: noAuth}
 
 	if cfg.LDAP == nil {
 		return b, nil
@@ -43,7 +43,7 @@ func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
 	if err := b.ConfigureLdap(ldap); err != nil {
 		return b, fmt.Errorf("failed to configure the request authenticator: %w", err)
 	}
-	b.mode = LDAPMode
+	b.mode = ldapMode
 
 	return b, nil
 }
@@ -59,13 +59,13 @@ func (b *BasicAuth) ConfigureLdap(ldap *LDAPAuth) error {
 
 func (b *BasicAuth) Wrap(next httprouter.Handle) httprouter.Handle {
 	switch b.mode {
-	case NoAuth:
+	case noAuth:
 		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { next(w, r, ps) }
-	case LDAPMode:
+	case ldapMode:
 		return BasicAuthLDAP(b.ldapAuth, next)
 	default:
 		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-			log.Error().Str("authentication issue", "bad server configuration").Send()
+			log.Error().Str("auth-method", string(b.mode)).Str("authentication issue", "bad server configuration").Send()
 			http.Error(w, "authentication issue: bad server configuration", http.StatusInternalServerError)
 		}
 	}
