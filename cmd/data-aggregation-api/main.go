@@ -57,7 +57,7 @@ func run() error {
 	go job.StartBuildLoop(&deviceRepo, &reports)
 
 	if err := router.NewManager(&deviceRepo, &reports).ListenAndServe(ctx, config.Cfg.API.ListenAddress, config.Cfg.API.ListenPort); err != nil {
-		log.Error().Err(err).Msg("webserver error")
+		return fmt.Errorf("webserver error: %w", err)
 	}
 
 	return nil
