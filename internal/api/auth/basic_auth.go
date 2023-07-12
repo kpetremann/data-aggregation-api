@@ -25,9 +25,7 @@ type BasicAuth struct {
 	mode     authMode
 }
 
-func NewBasicAuth() BasicAuth { return BasicAuth{mode: NoAuth} }
-
-func (b *BasicAuth) SetMode(mode authMode) { b.mode = mode }
+func NewBasicAuth(mode authMode) BasicAuth { return BasicAuth{mode: mode} }
 
 func (b *BasicAuth) ConfigureLdap(ldap *LDAPAuth) error {
 	if ldap == nil {

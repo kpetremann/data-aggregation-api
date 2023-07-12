@@ -43,13 +43,16 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 		InsecureSkipVerify: config.Cfg.LDAP.InsecureSkipVerify, //nolint:gosec // configurable on purpose
 	}
 
-	withAuth := auth.NewBasicAuth()
+	var withAuth auth.BasicAuth
 	if config.Cfg.LDAP.Enabled {
+		withAuth = auth.NewBasicAuth(auth.LDAPMode)
+
 		ldap := auth.NewLDAPAuth(config.Cfg.LDAP.URL, config.Cfg.LDAP.BindDN, config.Cfg.LDAP.Password, config.Cfg.LDAP.BaseDN, tlsConfig)
 		if err := withAuth.ConfigureLdap(ldap); err != nil {
 			return fmt.Errorf("failed to configure the request authenticator: %w", err)
 		}
-		withAuth.SetMode(auth.LDAPMode)
+	} else {
+		withAuth = auth.NewBasicAuth(auth.NoAuth)
 	}
 
 	router := httprouter.New()
