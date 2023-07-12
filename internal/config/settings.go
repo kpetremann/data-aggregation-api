@@ -19,20 +19,17 @@ var (
 )
 
 type Config struct {
-	LogLevel   string
-	Datacenter string
-
-	API struct {
-		ListenAddress string
-		ListenPort    int
-	}
-	NetBox struct {
+	Authentication AuthConfig
+	NetBox         struct {
 		URL    string
 		APIKey string
 	}
-
-	Authentication AuthConfig
-
+	LogLevel   string
+	Datacenter string
+	API        struct {
+		ListenAddress string
+		ListenPort    int
+	}
 	Build struct {
 		Interval            time.Duration
 		AllDevicesMustBuild bool
