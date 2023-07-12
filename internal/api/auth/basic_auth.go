@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -44,6 +45,7 @@ func (b *BasicAuth) Wrap(next httprouter.Handle) httprouter.Handle {
 		return BasicAuthLDAP(b.ldapAuth, next)
 	default:
 		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			log.Error().Str("authentication issue", "bad server configuration").Send()
 			http.Error(w, "authentication issue: bad server configuration", http.StatusInternalServerError)
 		}
 	}
