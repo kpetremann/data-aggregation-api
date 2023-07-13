@@ -56,7 +56,9 @@ func run() error {
 	// TODO: be able to close goroutine when the context is closed (graceful shutdown)
 	go job.StartBuildLoop(&deviceRepo, &reports)
 
-	router.NewManager(&deviceRepo, &reports).ListenAndServe(ctx, config.Cfg.API.ListenAddress, config.Cfg.API.ListenPort)
+	if err := router.NewManager(&deviceRepo, &reports).ListenAndServe(ctx, config.Cfg.API.ListenAddress, config.Cfg.API.ListenPort); err != nil {
+		return fmt.Errorf("webserver error: %w", err)
+	}
 
 	return nil
 }

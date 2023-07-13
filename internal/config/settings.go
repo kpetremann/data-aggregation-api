@@ -19,28 +19,33 @@ var (
 )
 
 type Config struct {
-	LogLevel   string
-	Datacenter string
-
-	API struct {
-		ListenAddress string
-		ListenPort    int
-	}
-	NetBox struct {
+	Authentication AuthConfig
+	NetBox         struct {
 		URL    string
 		APIKey string
 	}
-	LDAP struct {
-		URL                string
-		BaseDN             string
-		BindDN             string
-		Password           string
-		InsecureSkipVerify bool
+	LogLevel   string
+	Datacenter string
+	API        struct {
+		ListenAddress string
+		ListenPort    int
 	}
 	Build struct {
 		Interval            time.Duration
 		AllDevicesMustBuild bool
 	}
+}
+
+type AuthConfig struct {
+	LDAP *LDAPConfig
+}
+
+type LDAPConfig struct {
+	URL                string
+	BaseDN             string
+	BindDN             string
+	Password           string
+	InsecureSkipVerify bool
 }
 
 func setDefaults() {
@@ -56,6 +61,7 @@ func setDefaults() {
 	viper.SetDefault("Build.Interval", time.Minute)
 	viper.SetDefault("Build.AllDevicesMustBuild", false)
 
+	viper.SetDefault("LDAP.Enabled", false)
 	viper.SetDefault("LDAP.URL", "")
 	viper.SetDefault("LDAP.BaseDN", "")
 	viper.SetDefault("LDAP.BindDN", "")

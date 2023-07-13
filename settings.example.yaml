@@ -5,12 +5,13 @@ API:
   ListenAddress: "127.0.0.1"
   ListenPort: 1234
 
-LDAP:
-  InsecureSkipVerify: "false"
-  URL: "ldaps://URL.local"
-  BindDN: "cn=<user>,OU=<ou>,DC=<local>"
-  BaseDN: "DC=<local>"
-  Password: "<some_password>"
+Authentication:
+  LDAP:
+    InsecureSkipVerify: "false"
+    URL: "ldaps://URL.local"
+    BindDN: "cn=<user>,OU=<ou>,DC=<local>"
+    BaseDN: "DC=<local>"
+    Password: "<some_password>"
 
 NetBox:
   URL: "https://netbox.local"

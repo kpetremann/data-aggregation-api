@@ -2,7 +2,6 @@ package router
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 
@@ -34,24 +33,24 @@ func NewManager(deviceRepo DevicesRepository, reports *report.Repository) *Manag
 }
 
 // ListenAndServe starts to serve Web API requests.
-func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) {
+func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) error {
 	defer func() {
 		log.Warn().Msg("Shutdown.")
 	}()
 
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: config.Cfg.LDAP.InsecureSkipVerify, //nolint:gosec // configurable on purpose
+	withAuth, err := auth.NewBasicAuth(config.Cfg.Authentication)
+	if err != nil {
+		return err
 	}
-	ldap := auth.NewLDAPAuth(config.Cfg.LDAP.URL, config.Cfg.LDAP.BindDN, config.Cfg.LDAP.Password, config.Cfg.LDAP.BaseDN, tlsConfig)
 
 	router := httprouter.New()
 
 	router.GET("/api/health", healthCheck)
-	router.GET("/v1/devices/:hostname/afk_enabled", auth.BasicAuthLDAP(ldap, m.getAFKEnabled))
-	router.GET("/v1/devices/:hostname/openconfig", auth.BasicAuthLDAP(ldap, m.getDeviceOpenConfig))
-	router.GET("/v1/report/last", auth.BasicAuthLDAP(ldap, m.getLastReport))
-	router.GET("/v1/report/last/complete", auth.BasicAuthLDAP(ldap, m.getLastCompleteReport))
-	router.GET("/v1/report/last/successful", auth.BasicAuthLDAP(ldap, m.getLastSuccessfulReport))
+	router.GET("/v1/devices/:hostname/afk_enabled", withAuth.Wrap(m.getAFKEnabled))
+	router.GET("/v1/devices/:hostname/openconfig", withAuth.Wrap(m.getDeviceOpenConfig))
+	router.GET("/v1/report/last", withAuth.Wrap(m.getLastReport))
+	router.GET("/v1/report/last/complete", withAuth.Wrap(m.getLastCompleteReport))
+	router.GET("/v1/report/last/successful", withAuth.Wrap(m.getLastSuccessfulReport))
 
 	listenSocket := fmt.Sprint(address, ":", port)
 	log.Info().Msgf("Start webserver - listening on %s", listenSocket)
@@ -69,4 +68,6 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	if err := httpServer.Shutdown(context.Background()); err != nil {
 		log.Error().Err(err).Send()
 	}
+
+	return nil
 }
