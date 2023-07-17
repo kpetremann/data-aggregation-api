@@ -5,6 +5,10 @@ API:
   ListenAddress: "127.0.0.1"
   ListenPort: 1234
 
+Log:
+  Level: "info"
+  Pretty: true
+
 Authentication:
   LDAP:
     InsecureSkipVerify: "false"

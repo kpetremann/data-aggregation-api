@@ -24,7 +24,10 @@ type Config struct {
 		URL    string
 		APIKey string
 	}
-	LogLevel   string
+	Log struct {
+		Level  string
+		Pretty bool
+	}
 	Datacenter string
 	API        struct {
 		ListenAddress string
@@ -50,7 +53,8 @@ type LDAPConfig struct {
 
 func setDefaults() {
 	viper.SetDefault("Datacenter", "")
-	viper.SetDefault("LogLevel", "info")
+	viper.SetDefault("Log.Level", "info")
+	viper.SetDefault("Log.Pretty", false)
 
 	viper.SetDefault("API.ListenAddress", defaultListenAddress)
 	viper.SetDefault("API.ListenPort", defaultListenPort)

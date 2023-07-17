@@ -17,14 +17,16 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/report"
 )
 
-func configureLogging(logLevel string) error {
+func configureLogging(logLevel string, pretty bool) error {
 	level, err := zerolog.ParseLevel(logLevel)
 	if err != nil {
 		return fmt.Errorf("failed to parse log level '%s': %w", logLevel, err)
 	}
 	zerolog.SetGlobalLevel(level)
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix               //nolint:reassign // it is the way
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}) //nolint:reassign // it is the way
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix //nolint:reassign // it is the way
+	if pretty {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}) //nolint:reassign // it is the way
+	}
 
 	return nil
 }
@@ -42,7 +44,7 @@ func run() error {
 	if err := config.LoadConfig(); err != nil {
 		return err
 	}
-	if err := configureLogging(config.Cfg.LogLevel); err != nil {
+	if err := configureLogging(config.Cfg.Log.Level, config.Cfg.Log.Pretty); err != nil {
 		return err
 	}
 
