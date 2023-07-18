@@ -12,6 +12,7 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/config"
 	"github.com/criteo/data-aggregation-api/internal/convertor/device"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
+	"github.com/criteo/data-aggregation-api/internal/metrics"
 	"github.com/criteo/data-aggregation-api/internal/report"
 )
 
@@ -134,6 +135,7 @@ func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.P
 
 // StartBuildLoop starts the build in an infinite loop.
 func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Repository) {
+	metricsRegistry := metrics.NewRegistry()
 	for {
 		var wg sync.WaitGroup
 		reports.StartNewReport()
@@ -147,12 +149,14 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 
 		reports.UpdateStatus(report.InProgress)
 		if devs, stats, err := RunBuild(reportCh); err != nil {
+			metricsRegistry.BuildFailed()
 			reports.UpdateStatus(report.Failed)
 			reports.UpdatePerformanceStats(stats)
 			log.Error().Err(err).Msg("build failed")
 		} else {
 			deviceRepo.Set(devs)
 			log.Info().Msg("build successful")
+			metricsRegistry.BuildSuccessful()
 			reports.UpdateStatus(report.Success)
 			reports.UpdatePerformanceStats(stats)
 			reports.MarkAsSuccessful()
