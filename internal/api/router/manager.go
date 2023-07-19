@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 
 	"github.com/criteo/data-aggregation-api/internal/api/auth"
@@ -45,6 +46,7 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 
 	router := httprouter.New()
 
+	router.GET("/metrics", prometheusMetrics(promhttp.Handler()))
 	router.GET("/api/health", healthCheck)
 	router.GET("/v1/devices/:hostname/afk_enabled", withAuth.Wrap(m.getAFKEnabled))
 	router.GET("/v1/devices/:hostname/openconfig", withAuth.Wrap(m.getDeviceOpenConfig))

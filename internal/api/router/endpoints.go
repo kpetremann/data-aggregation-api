@@ -21,6 +21,12 @@ func healthCheck(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprintf(w, `{"status": "ok"}`)
 }
 
+func prometheusMetrics(h http.Handler) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		h.ServeHTTP(w, r)
+	}
+}
+
 // getAFKEnabled endpoint returns all AFK enabled devices.
 // They are supposed to be managed by AFK, meaning the configuration should be applied periodically.
 func (m *Manager) getAFKEnabled(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
