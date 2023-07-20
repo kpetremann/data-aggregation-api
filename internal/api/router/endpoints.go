@@ -16,7 +16,7 @@ const applicationJSON = "application/json"
 const hostnameKey = "hostname"
 const wildcard = "*"
 
-func healthCheck(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func healthCheck(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
 	fmt.Fprintf(w, `{"status": "ok"}`)
 }
@@ -29,7 +29,7 @@ func prometheusMetrics(h http.Handler) httprouter.Handle {
 
 // getAFKEnabled endpoint returns all AFK enabled devices.
 // They are supposed to be managed by AFK, meaning the configuration should be applied periodically.
-func (m *Manager) getAFKEnabled(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (m *Manager) getAFKEnabled(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
 	hostname := ps.ByName(hostnameKey)
 
@@ -62,7 +62,7 @@ func (m *Manager) getAFKEnabled(w http.ResponseWriter, r *http.Request, ps httpr
 }
 
 // getDeviceOpenConfig endpoint returns OpenConfig JSON for one or all devices.
-func (m *Manager) getDeviceOpenConfig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (m *Manager) getDeviceOpenConfig(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
 	hostname := ps.ByName(hostnameKey)
 	if ps.ByName(hostnameKey) == wildcard {
@@ -87,7 +87,7 @@ func (m *Manager) getDeviceOpenConfig(w http.ResponseWriter, r *http.Request, ps
 }
 
 // getLastReport returns the last or current report.
-func (m *Manager) getLastReport(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (m *Manager) getLastReport(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	out, err := m.reports.GetLastJSON()
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -100,7 +100,7 @@ func (m *Manager) getLastReport(w http.ResponseWriter, r *http.Request, _ httpro
 }
 
 // getLastCompleteReport returns the previous build report.
-func (m *Manager) getLastCompleteReport(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (m *Manager) getLastCompleteReport(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	out, err := m.reports.GetLastCompleteJSON()
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -113,7 +113,7 @@ func (m *Manager) getLastCompleteReport(w http.ResponseWriter, r *http.Request, 
 }
 
 // getLastSuccessfulReport returns the previous successful build report.
-func (m *Manager) getLastSuccessfulReport(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (m *Manager) getLastSuccessfulReport(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	out, err := m.reports.GetLastSuccessfulJSON()
 	if err != nil {
 		log.Error().Err(err).Send()
