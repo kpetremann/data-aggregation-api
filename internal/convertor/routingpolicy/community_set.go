@@ -16,7 +16,7 @@ func extractCommunityListTerms(communityList *routingpolicy.CommunityList) []ope
 
 // CommunityListToOpenconfig converts precomputed prefix-lists to OpenConfig.
 // OpenConfig path: /routing-policy/defined-sets/bgp-defined-sets/community-sets/.
-func CommunityListToOpenconfig(hostname string, communityLists []*routingpolicy.CommunityList) map[string]*openconfig.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet {
+func CommunityListToOpenconfig(communityLists []*routingpolicy.CommunityList) map[string]*openconfig.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet {
 	var communitySets = make(map[string]*openconfig.RoutingPolicy_DefinedSets_BgpDefinedSets_CommunitySet)
 
 	for _, communityList := range communityLists {

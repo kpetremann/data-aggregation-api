@@ -256,7 +256,7 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 		},
 	}
 
-	ret, err := routingpolicy.RoutingPolicyToOpenconfig("tor01-01", prefixLists, communityLists, routingPolicies)
+	ret, err := routingpolicy.RoutingPolicyToOpenconfig(prefixLists, communityLists, routingPolicies)
 	if err != nil {
 		t.Errorf("failed to convert routing policies to OpenConfig")
 	}

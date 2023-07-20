@@ -63,7 +63,7 @@ func extractPrefixListTerms(terms []*routingpolicy.PrefixListTerm) map[openconfi
 
 // PrefixListsToOpenconfig converts precomputed prefix-lists to OpenConfig.
 // OpenConfig path: /routing-policy/defined-sets/prefix-sets/.
-func PrefixListsToOpenconfig(hostname string, prefixLists []*routingpolicy.PrefixList) map[string]*openconfig.RoutingPolicy_DefinedSets_PrefixSet {
+func PrefixListsToOpenconfig(prefixLists []*routingpolicy.PrefixList) map[string]*openconfig.RoutingPolicy_DefinedSets_PrefixSet {
 	prefixSets := make(map[string]*openconfig.RoutingPolicy_DefinedSets_PrefixSet)
 
 	for _, prefixList := range prefixLists {
