@@ -106,7 +106,7 @@ func (d *Device) GenerateOpenconfig() error {
 		return fmt.Errorf("convert from BGP to OpenConfig failed: %w", err)
 	}
 
-	routingPolicyConfig, err := rpconvertors.RoutingPolicyToOpenconfig(d.Dcim.Hostname, d.PrefixLists, d.CommunityLists, d.RoutePolicies)
+	routingPolicyConfig, err := rpconvertors.RoutingPolicyToOpenconfig(d.PrefixLists, d.CommunityLists, d.RoutePolicies)
 	if err != nil {
 		return fmt.Errorf("convert from Routing Policy to OpenConfig failed: %w", err)
 	}
