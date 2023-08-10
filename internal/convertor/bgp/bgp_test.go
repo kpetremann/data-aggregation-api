@@ -49,7 +49,6 @@ func TestBGPToOpenConfig(t *testing.T) {
 
 	sessions := []*cmdbBGP.Session{
 		{
-			Status: "active",
 			PeerA: cmdbBGP.DeviceSession{
 				Device: struct {
 					Name string `json:"name" validate:"required"`
@@ -92,6 +91,7 @@ func TestBGPToOpenConfig(t *testing.T) {
 				Description:     "TO:SPINE01-01",
 				MaximumPrefixes: 128,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			PeerB: cmdbBGP.DeviceSession{
 				Device: struct {
@@ -135,6 +135,7 @@ func TestBGPToOpenConfig(t *testing.T) {
 				Description:     "TO:TOR01-01",
 				MaximumPrefixes: 10,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			Password: awesomePassword,
 		},

@@ -29,7 +29,6 @@ func NeighborsToOpenconfig(hostname string, sessions []*bgp.Session) (map[string
 	for _, session := range sessions {
 		localInfo, remoteInfo := getBGPsides(hostname, session)
 
-		active := session.Status == bgp.StatusActive
 		neighborAddress := remoteInfo.LocalAddress.Address.IP.String()
 
 		policy := openconfig.NetworkInstance_Protocol_Bgp_Neighbor_ApplyPolicy{}
@@ -50,7 +49,7 @@ func NeighborsToOpenconfig(hostname string, sessions []*bgp.Session) (map[string
 			NeighborAddress: &neighborAddress,
 			ApplyPolicy:     &policy,
 			AfiSafi:         safis,
-			Enabled:         &active,
+			Enabled:         &localInfo.Enabled,
 			PeerAs:          remoteInfo.LocalAsn.Number,
 			LocalAs:         localInfo.LocalAsn.Number,
 			AuthPassword:    &session.Password,

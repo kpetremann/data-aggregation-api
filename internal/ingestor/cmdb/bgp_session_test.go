@@ -26,6 +26,7 @@ const ipv4BGPSession = `
         "id": 1,
         "peer_a": {
             "id": 1,
+			"enabled": true,
             "local_address": {
                 "id": 1,
                 "url": "http://127.0.0.1:8001/api/ipam/ip-addresses/1/",
@@ -77,6 +78,7 @@ const ipv4BGPSession = `
         },
         "peer_b": {
             "id": 2,
+			"enabled": false,
             "local_address": {
                 "id": 2,
                 "url": "http://127.0.0.1:8001/api/ipam/ip-addresses/2/",
@@ -131,7 +133,6 @@ const ipv4BGPSession = `
 var ipv4Ingested = map[string][]*bgp.Session{
 	"tor01-01": {
 		&bgp.Session{
-			Status: "active",
 			PeerA: bgp.DeviceSession{
 				Device: struct {
 					Name string `json:"name" validate:"required"`
@@ -174,6 +175,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01",
 				MaximumPrefixes: 128,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -211,13 +213,13 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01",
 				MaximumPrefixes: 10,
 				EnforceFirstAs:  true,
+				Enabled:         false,
 			},
 			Password: "awesomepassword",
 		},
 	},
 	"spine01-01": {
 		&bgp.Session{
-			Status: "active",
 			PeerA: bgp.DeviceSession{
 				Device: struct {
 					Name string `json:"name" validate:"required"`
@@ -260,6 +262,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01",
 				MaximumPrefixes: 128,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -297,6 +300,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01",
 				MaximumPrefixes: 10,
 				EnforceFirstAs:  true,
+				Enabled:         false,
 			},
 			Password: "awesomepassword",
 		},
@@ -313,6 +317,7 @@ const ipv6BGPSession = `
 		"id": 2,
 		"peer_a": {
 			"id": 3,
+			"enabled": true,
 			"local_address": {
 				"id": 3,
 				"url": "http://127.0.0.1:8001/api/ipam/ip-addresses/3/",
@@ -356,6 +361,7 @@ const ipv6BGPSession = `
 		},
 		"peer_b": {
 			"id": 4,
+			"enabled": true,
 			"local_address": {
 				"id": 4,
 				"url": "http://127.0.0.1:8001/api/ipam/ip-addresses/4/",
@@ -410,7 +416,6 @@ const ipv6BGPSession = `
 var ipv6Ingested = map[string][]*bgp.Session{
 	"tor01-01": {
 		&bgp.Session{
-			Status: "active",
 			PeerA: bgp.DeviceSession{
 				Device: struct {
 					Name string `json:"name" validate:"required"`
@@ -449,6 +454,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -488,13 +494,13 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			Password: "awesomepassword",
 		},
 	},
 	"spine01-01": {
 		&bgp.Session{
-			Status: "active",
 			PeerA: bgp.DeviceSession{
 				Device: struct {
 					Name string `json:"name" validate:"required"`
@@ -533,6 +539,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -572,6 +579,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
+				Enabled:         true,
 			},
 			Password: "awesomepassword",
 		},

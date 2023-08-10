@@ -6,15 +6,6 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/types"
 )
 
-type SessionStatus string
-
-const (
-	StatusActive      SessionStatus = "active"
-	StatusPlanned     SessionStatus = "planned"
-	StatusMaintenance SessionStatus = "maintenance"
-	StatusOffline     SessionStatus = "offline"
-)
-
 type Address struct {
 	Address types.CIDR `json:"address" validate:"required"`
 	Family  int        `json:"family"  validate:"required"`
@@ -34,10 +25,10 @@ type DeviceSession struct {
 	LocalAddress    Address                        `json:"local_address"    validate:"required"`
 	MaximumPrefixes uint32                         `json:"maximum_prefixes" validate:"omitempty"`
 	EnforceFirstAs  bool                           `json:"enforce_first_as" validate:"omitempty"`
+	Enabled         bool                           `json:"enabled"   validate:"required"`
 }
 
 type Session struct {
-	Status   SessionStatus `json:"status"   validate:"required"`
 	Password string        `json:"password" validate:"omitempty"`
 	PeerA    DeviceSession `json:"peer_a"   validate:"required"`
 	PeerB    DeviceSession `json:"peer_b"   validate:"required"`
