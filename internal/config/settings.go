@@ -65,12 +65,11 @@ func setDefaults() {
 	viper.SetDefault("Build.Interval", time.Minute)
 	viper.SetDefault("Build.AllDevicesMustBuild", false)
 
-	viper.SetDefault("LDAP.Enabled", false)
-	viper.SetDefault("LDAP.URL", "")
-	viper.SetDefault("LDAP.BaseDN", "")
-	viper.SetDefault("LDAP.BindDN", "")
-	viper.SetDefault("LDAP.Password", "")
-	viper.SetDefault("LDAP.InsecureSkipVerify", false)
+	viper.SetDefault("Authentication.LDAP.URL", "")
+	viper.SetDefault("Authentication.LDAP.BaseDN", "")
+	viper.SetDefault("Authentication.LDAP.BindDN", "")
+	viper.SetDefault("Authentication.LDAP.Password", "")
+	viper.SetDefault("Authentication.LDAP.InsecureSkipVerify", false)
 }
 
 func LoadConfig() error {
