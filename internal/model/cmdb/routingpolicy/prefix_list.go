@@ -13,7 +13,6 @@ const (
 
 type PrefixListTerm struct {
 	Prefix         types.CIDR `json:"prefix"   validate:"required"`
-	Sequence       int        `json:"sequence" validate:"required"`
 	LessOrEqual    int        `json:"le"       validate:"omitempty"`
 	GreaterOrEqual int        `json:"ge"       validate:"omitempty"`
 }

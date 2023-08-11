@@ -31,13 +31,11 @@ func TestPrecomputePrefixLists(t *testing.T) {
 					"ip_version": "ipv4",
 					"terms": [
 						{
-							"sequence": 10,
 							"prefix": "192.0.2.0/28",
 							"le": null,
 							"ge": null
 						},
 						{
-							"sequence": 20,
 							"prefix": "192.0.2.16/28",
 							"le": 32,
 							"ge": 30
@@ -57,7 +55,6 @@ func TestPrecomputePrefixLists(t *testing.T) {
 						},
 						Terms: []*routingpolicy.PrefixListTerm{
 							{
-								Sequence: 10,
 								Prefix: types.CIDR{
 									IP: net.IP{
 										0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 0, 2, 0,
@@ -68,7 +65,6 @@ func TestPrecomputePrefixLists(t *testing.T) {
 								GreaterOrEqual: 0,
 							},
 							{
-								Sequence: 20,
 								Prefix: types.CIDR{
 									IP: net.IP{
 										0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 0, 2, 16,
