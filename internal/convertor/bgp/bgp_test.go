@@ -91,7 +91,7 @@ func TestBGPToOpenConfig(t *testing.T) {
 				Description:     "TO:SPINE01-01",
 				MaximumPrefixes: 128,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			PeerB: cmdbBGP.DeviceSession{
 				Device: struct {
@@ -135,7 +135,7 @@ func TestBGPToOpenConfig(t *testing.T) {
 				Description:     "TO:TOR01-01",
 				MaximumPrefixes: 10,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			Password: awesomePassword,
 		},

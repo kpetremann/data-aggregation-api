@@ -21,11 +21,11 @@ type DeviceSession struct {
 	RoutePolicyIn   *routingpolicy.RoutePolicyLite `json:"route_policy_in"  validate:"omitempty"`
 	RoutePolicyOut  *routingpolicy.RoutePolicyLite `json:"route_policy_out" validate:"omitempty"`
 	AfiSafis        []*AfiSafi                     `json:"afi_safis"        validate:"required"`
+	Enabled         *bool                          `json:"enabled"          validate:"required"`
 	Description     string                         `json:"description"      validate:"omitempty"`
 	LocalAddress    Address                        `json:"local_address"    validate:"required"`
 	MaximumPrefixes uint32                         `json:"maximum_prefixes" validate:"omitempty"`
 	EnforceFirstAs  bool                           `json:"enforce_first_as" validate:"omitempty"`
-	Enabled         bool                           `json:"enabled"   validate:"required"`
 }
 
 type Session struct {
