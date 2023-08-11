@@ -27,11 +27,9 @@ func TestPrecomputeCommunityLists(t *testing.T) {
 					},
 					"terms": [
 						{
-							"sequence": 10,
 							"community": "650..:999"
 						},
 						{
-							"sequence": 20,
 							"community": "650..:1000"
 						}
 					],
@@ -52,11 +50,9 @@ func TestPrecomputeCommunityLists(t *testing.T) {
 						},
 						Terms: []*routingpolicy.CommunityListTerm{
 							{
-								Sequence:  10,
 								Community: "650..:999",
 							},
 							{
-								Sequence:  20,
 								Community: "650..:1000",
 							},
 						},

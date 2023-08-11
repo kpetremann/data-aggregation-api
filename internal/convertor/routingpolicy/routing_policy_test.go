@@ -72,11 +72,9 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 			},
 			Terms: []*cmdbRP.CommunityListTerm{
 				{
-					Sequence:  10,
 					Community: "650..:999",
 				},
 				{
-					Sequence:  20,
 					Community: "650..:1000",
 				},
 			},
