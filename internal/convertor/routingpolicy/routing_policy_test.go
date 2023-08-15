@@ -38,7 +38,6 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 			},
 			Terms: []*cmdbRP.PrefixListTerm{
 				{
-					Sequence: 10,
 					Prefix: types.CIDR{
 						IP: net.IP{
 							0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 0, 2, 0,
@@ -49,7 +48,6 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 					GreaterOrEqual: 0,
 				},
 				{
-					Sequence: 20,
 					Prefix: types.CIDR{
 						IP: net.IP{
 							0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 192, 0, 2, 16,
@@ -74,11 +72,9 @@ func TestRoutingPolicyToOpenconfig(t *testing.T) {
 			},
 			Terms: []*cmdbRP.CommunityListTerm{
 				{
-					Sequence:  10,
 					Community: "650..:999",
 				},
 				{
-					Sequence:  20,
 					Community: "650..:1000",
 				},
 			},

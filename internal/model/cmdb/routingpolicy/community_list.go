@@ -2,7 +2,6 @@ package routingpolicy
 
 type CommunityListTerm struct {
 	Community string `json:"community" validate:"required"`
-	Sequence  int    `json:"sequence"  validate:"required"`
 }
 
 type CommunityList struct {
