@@ -12,8 +12,9 @@ import (
 // GetRoutePolicies returns all route-policies defined in the CDMB.
 func GetRoutePolicies() ([]*routingpolicy.RoutePolicy, error) {
 	response := netbox.NetboxResponse[routingpolicy.RoutePolicy]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/route-policies/", &response)
+	err := netbox.Get("/api/plugins/cmdb/route-policies/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("route-policies fetching failure: %w", err)
 	}

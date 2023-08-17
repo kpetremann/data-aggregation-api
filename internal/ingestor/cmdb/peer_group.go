@@ -15,8 +15,9 @@ import (
 // You should migrate to configuration without using peer-groups.
 func GetPeerGroups() ([]*bgp.PeerGroup, error) {
 	response := netbox.NetboxResponse[bgp.PeerGroup]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/peer-groups/", &response)
+	err := netbox.Get("/api/plugins/cmdb/peer-groups/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("peer-groups fetching failure: %w", err)
 	}

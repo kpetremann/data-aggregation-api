@@ -2,9 +2,11 @@ package dcim
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/criteo/data-aggregation-api/internal/config"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/netbox"
 	"github.com/criteo/data-aggregation-api/internal/model/dcim"
 )
@@ -15,8 +17,12 @@ import (
 func GetNetworkInventory() ([]*dcim.NetworkDevice, error) {
 	response := netbox.NetboxResponse[dcim.NetworkDevice]{}
 
-	if err := netbox.Get("/api/dcim/devices/?role__n=server", &response); err != nil {
-		return nil, fmt.Errorf("network inventory fetching failure: %s", err)
+	params := url.Values{}
+	params.Set(string(config.Cfg.NetBox.DatacenterFilterKey), config.Cfg.Datacenter)
+	params.Set("role__n", "server")
+
+	if err := netbox.Get("/api/dcim/devices/", &response, params); err != nil {
+		return nil, fmt.Errorf("network inventory fetching failure: %w", err)
 	}
 
 	if response.Count != len(response.Results) {

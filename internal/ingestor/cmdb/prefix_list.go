@@ -12,8 +12,9 @@ import (
 // GetPrefixLists returns all prefix-lists from the Network CMDB.
 func GetPrefixLists() ([]*routingpolicy.PrefixList, error) {
 	response := netbox.NetboxResponse[routingpolicy.PrefixList]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/prefix-lists/", &response)
+	err := netbox.Get("/api/plugins/cmdb/prefix-lists/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("prefix-lists fetching failure: %w", err)
 	}
