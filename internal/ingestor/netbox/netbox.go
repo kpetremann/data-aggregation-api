@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -31,35 +31,30 @@ func NewGetRequest(url string) (*http.Request, error) {
 }
 
 // Get fetches a Netbox endpoint.
-func Get[R any](endpoint string, out *NetboxResponse[R]) error {
+func Get[R any](endpoint string, out *NetboxResponse[R], params url.Values) error {
 	const endpointKey = "endpoint"
 	client := http.Client{Timeout: 10 * 60 * time.Second}
-	sep := "?"
 
-	// TODO: use url.Values and url.JoinPath instead
-	if strings.Contains(endpoint, sep) {
-		sep = "&"
+	params.Set("limit", "0")
+	params.Set("ordering", "id")
+
+	baseURL, err := url.JoinPath(config.Cfg.NetBox.URL, endpoint)
+	if err != nil {
+		return fmt.Errorf("failed to assemble URL: %w", err)
 	}
-
-	datacenterFilter := ""
-	// TODO: implement filter on CMDB side!
-	if config.Cfg.Datacenter != "" {
-		datacenterFilter = "&site_group=" + strings.ToUpper(config.Cfg.Datacenter)
-	}
-
-	url := config.Cfg.NetBox.URL + endpoint + sep + "limit=0&ordering=id" + datacenterFilter
+	url := baseURL + "?" + params.Encode()
 	log.Info().Str(endpointKey, endpoint).Msgf("Get %s", url)
 
 	// Get all pages
 	for url != "" {
 		req, err := NewGetRequest(url)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create request: %w", err)
 		}
 
 		data, err := client.Do(req)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to query netbox: %w", err)
 		}
 		defer func() {
 			if err := data.Body.Close(); err != nil {
@@ -74,7 +69,7 @@ func Get[R any](endpoint string, out *NetboxResponse[R]) error {
 		var buffer NetboxResponse[R]
 		err = json.NewDecoder(data.Body).Decode(&buffer)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to decode netbox response: %w", err)
 		}
 
 		out.Results = append(out.Results, buffer.Results...)

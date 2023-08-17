@@ -12,8 +12,9 @@ import (
 // GetBGPSessions returns all BGP sessions from the Network CMDB.
 func GetBGPSessions() ([]*bgp.Session, error) {
 	response := netbox.NetboxResponse[bgp.Session]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/bgp-sessions/", &response)
+	err := netbox.Get("/api/plugins/cmdb/bgp-sessions/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("BGP Sessions fetching failure: %w", err)
 	}

@@ -12,8 +12,9 @@ import (
 // GetCommunityLists returns all community-lists from the Network CMDB.
 func GetCommunityLists() ([]*routingpolicy.CommunityList, error) {
 	response := netbox.NetboxResponse[routingpolicy.CommunityList]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/bgp-community-lists/", &response)
+	err := netbox.Get("/api/plugins/cmdb/bgp-community-lists/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("BGP Community Lists fetching failure: %w", err)
 	}

@@ -8,10 +8,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Filter string
+
 const (
 	defaultListenAddress = "0.0.0.0"
 	defaultListenPort    = 8080
 	localPath            = "."
+
+	SiteFilter       Filter = "site"
+	SiteGroupFilter  Filter = "site_group"
+	SiteRegionFilter Filter = "region"
 )
 
 var (
@@ -21,8 +27,9 @@ var (
 type Config struct {
 	Authentication AuthConfig
 	NetBox         struct {
-		URL    string
-		APIKey string
+		URL                 string
+		APIKey              string
+		DatacenterFilterKey Filter
 	}
 	Log struct {
 		Level  string
@@ -61,6 +68,7 @@ func setDefaults() {
 
 	viper.SetDefault("NetBox.URL", "")
 	viper.SetDefault("NetBox.APIKey", "")
+	viper.SetDefault("NetBox.DatacenterFilterKey", SiteFilter)
 
 	viper.SetDefault("Build.Interval", time.Minute)
 	viper.SetDefault("Build.AllDevicesMustBuild", false)

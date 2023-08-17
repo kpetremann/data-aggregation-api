@@ -12,8 +12,9 @@ import (
 // GetBGPGlobal returns all BGP global configuration from the Network CMDB.
 func GetBGPGlobal() ([]*bgp.BGPGlobal, error) {
 	response := netbox.NetboxResponse[bgp.BGPGlobal]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/bgp-global/", &response)
+	err := netbox.Get("/api/plugins/cmdb/bgp-global/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("BGP Global fetching failure: %w", err)
 	}
