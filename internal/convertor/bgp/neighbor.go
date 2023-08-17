@@ -49,7 +49,7 @@ func NeighborsToOpenconfig(hostname string, sessions []*bgp.Session) (map[string
 			NeighborAddress: &neighborAddress,
 			ApplyPolicy:     &policy,
 			AfiSafi:         safis,
-			Enabled:         &localInfo.Enabled,
+			Enabled:         localInfo.Enabled,
 			PeerAs:          remoteInfo.LocalAsn.Number,
 			LocalAs:         localInfo.LocalAsn.Number,
 			AuthPassword:    &session.Password,

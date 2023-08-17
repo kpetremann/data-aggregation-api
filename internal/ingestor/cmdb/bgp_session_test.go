@@ -15,6 +15,8 @@ import (
 
 var as65000 uint32 = 65000
 var as65001 uint32 = 65001
+var flagTrue = true
+var flagFalse = false
 
 /*
 	BGP session - IPv4
@@ -175,7 +177,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01",
 				MaximumPrefixes: 128,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -213,7 +215,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01",
 				MaximumPrefixes: 10,
 				EnforceFirstAs:  true,
-				Enabled:         false,
+				Enabled:         &flagFalse,
 			},
 			Password: "awesomepassword",
 		},
@@ -262,7 +264,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01",
 				MaximumPrefixes: 128,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -300,7 +302,7 @@ var ipv4Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01",
 				MaximumPrefixes: 10,
 				EnforceFirstAs:  true,
-				Enabled:         false,
+				Enabled:         &flagFalse,
 			},
 			Password: "awesomepassword",
 		},
@@ -454,7 +456,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -494,7 +496,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			Password: "awesomepassword",
 		},
@@ -539,7 +541,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:SPINE01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			PeerB: bgp.DeviceSession{
 				Device: struct {
@@ -579,7 +581,7 @@ var ipv6Ingested = map[string][]*bgp.Session{
 				Description:     "TO:TOR01-01:V6",
 				MaximumPrefixes: 0,
 				EnforceFirstAs:  true,
-				Enabled:         true,
+				Enabled:         &flagTrue,
 			},
 			Password: "awesomepassword",
 		},
