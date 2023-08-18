@@ -32,9 +32,10 @@ func configureLogging(logLevel string, pretty bool) error {
 }
 
 var (
-	version   = ""
-	buildTime = "unknown"
-	buildUser = "unknown"
+	version = ""
+	date    = "unknown"
+	commit  = "unknown"
+	builtBy = "unknown"
 )
 
 func run() error {
@@ -49,8 +50,9 @@ func run() error {
 	}
 
 	log.Info().Str("version", version).Send()
-	log.Info().Str("build-time", buildTime).Send()
-	log.Info().Str("build-user", buildUser).Send()
+	log.Info().Str("commit", commit).Send()
+	log.Info().Str("build-time", date).Send()
+	log.Info().Str("build-user", builtBy).Send()
 
 	deviceRepo := device.NewSafeRepository()
 	reports := report.NewRepository()
