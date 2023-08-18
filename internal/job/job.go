@@ -160,16 +160,22 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 		reports.UpdateStatus(report.InProgress)
 		if devs, stats, err := RunBuild(reportCh); err != nil {
 			metricsRegistry.BuildFailed()
+
 			reports.UpdateStatus(report.Failed)
 			reports.UpdateStats(stats)
+
 			log.Error().Err(err).Msg("build failed")
 		} else {
 			deviceRepo.Set(devs)
-			log.Info().Msg("build successful")
+
 			metricsRegistry.BuildSuccessful()
+			metricsRegistry.SetBuiltDevices(stats.BuiltDevicesCount)
+
 			reports.UpdateStatus(report.Success)
 			reports.UpdateStats(stats)
 			reports.MarkAsSuccessful()
+
+			log.Info().Msg("build successful")
 		}
 
 		reports.MarkAsComplete()

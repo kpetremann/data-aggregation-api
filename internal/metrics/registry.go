@@ -6,12 +6,21 @@ import (
 )
 
 type Registry struct {
-	lastBuildStatus *prometheus.GaugeVec
-	buildTotal      *prometheus.CounterVec
+	BuiltDevicesNumber *prometheus.GaugeVec
+	lastBuildStatus    *prometheus.GaugeVec
+	buildTotal         *prometheus.CounterVec
 }
 
 func NewRegistry() Registry {
 	return Registry{
+		BuiltDevicesNumber: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "built_devices_number",
+				Help: "Number of devices built during last successful build",
+			},
+			[]string{},
+		),
+
 		lastBuildStatus: promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "build_status",
@@ -46,4 +55,9 @@ func (r *Registry) BuildSuccessful() {
 func (r *Registry) BuildFailed() {
 	r.lastBuildStatus.WithLabelValues().Set(0)
 	r.buildTotal.WithLabelValues("false").Inc()
+}
+
+// SetBuiltDevices updates the `built_devices` gauge.
+func (r *Registry) SetBuiltDevices(count uint32) {
+	r.BuiltDevicesNumber.WithLabelValues().Set(float64(count))
 }
