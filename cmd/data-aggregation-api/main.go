@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/criteo/data-aggregation-api/internal/api/router"
+	"github.com/criteo/data-aggregation-api/internal/app"
 	"github.com/criteo/data-aggregation-api/internal/config"
 	"github.com/criteo/data-aggregation-api/internal/convertor/device"
 	"github.com/criteo/data-aggregation-api/internal/job"
@@ -68,6 +69,11 @@ func run() error {
 }
 
 func main() {
+	app.Info.Version = version
+	app.Info.BuildTime = date
+	app.Info.BuildUser = builtBy
+	app.Info.Commit = commit
+
 	if err := run(); err != nil {
 		log.Fatal().Err(err).Send()
 	}

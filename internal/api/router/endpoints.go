@@ -7,6 +7,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/criteo/data-aggregation-api/internal/app"
 	"github.com/criteo/data-aggregation-api/internal/convertor/device"
 	"github.com/julienschmidt/httprouter"
 )
@@ -19,6 +20,11 @@ const wildcard = "*"
 func healthCheck(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
 	fmt.Fprintf(w, `{"status": "ok"}`)
+}
+
+func getVersion(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	w.Header().Set(contentType, applicationJSON)
+	fmt.Fprintf(w, `{"version": "%s", "build_time": "%s", "build_user": "%s"}`, app.Info.Version, app.Info.BuildTime, app.Info.BuildUser)
 }
 
 func prometheusMetrics(h http.Handler) httprouter.Handle {
