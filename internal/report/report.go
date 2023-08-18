@@ -9,15 +9,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Report struct {
+type Report struct { //nolint:govet // for JSON order
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 
 	mutex *sync.Mutex
 
-	Logs        map[MessageType][]Message `json:"logs"`
-	Status      jobStatus                 `json:"status"`
-	Performance PerformanceStats          `json:"performance"`
+	Status jobStatus `json:"status"`
+	Stats  Stats     `json:"stats"`
+
+	Logs map[MessageType][]Message `json:"logs"`
 }
 
 // NewReport creates and initializes a new Report.

@@ -8,10 +8,20 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type Stats struct {
+	BuiltDevicesCount uint32           `json:"built_devices"`
+	Performance       PerformanceStats `json:"performance"`
+}
+
+func (s Stats) Log() {
+	log.Info().Uint32("successfully_built", s.BuiltDevicesCount).Send()
+	s.Performance.Log()
+}
+
 // PerformanceStats contains durations of each step of the build pipeline.
 type PerformanceStats struct {
 	DataFetchingDuration time.Duration `json:"data_fetching_duration"`
-	PrecomputeDuration   time.Duration `json:"precomputeduration"`
+	PrecomputeDuration   time.Duration `json:"precompute_duration"`
 	ComputeDuration      time.Duration `json:"compute_duration"`
 	BuildDuration        time.Duration `json:"build_duration"`
 }
@@ -20,7 +30,7 @@ type PerformanceStats struct {
 func (p *PerformanceStats) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		DataFetchingDuration string `json:"data_fetching_duration"`
-		PrecomputeDuration   string `json:"precomputeduration"`
+		PrecomputeDuration   string `json:"precompute_duration"`
 		ComputeDuration      string `json:"compute_duration"`
 		BuildDuration        string `json:"build_duration"`
 	}{
