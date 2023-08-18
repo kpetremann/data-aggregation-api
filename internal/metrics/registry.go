@@ -1,18 +1,30 @@
 package metrics
 
 import (
+	"github.com/criteo/data-aggregation-api/internal/app"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Registry struct {
+	AppInfo            *prometheus.GaugeVec
 	BuiltDevicesNumber *prometheus.GaugeVec
 	lastBuildStatus    *prometheus.GaugeVec
 	buildTotal         *prometheus.CounterVec
 }
 
 func NewRegistry() Registry {
+	appInfo := promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "data_aggregation_api_info",
+			Help: "Version of the application",
+		},
+		[]string{"version", "commit", "build_time", "built_by"},
+	)
+	appInfo.WithLabelValues(app.Info.Version, app.Info.Commit, app.Info.BuildTime, app.Info.BuildUser).Set(1)
+
 	return Registry{
+		AppInfo: appInfo,
 		BuiltDevicesNumber: promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "built_devices_number",
