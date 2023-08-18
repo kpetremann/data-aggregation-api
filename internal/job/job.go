@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -42,10 +43,11 @@ func precompute(reportCh chan report.Message, ingestorRepo *repository.Assets) (
 }
 
 // Compute generates OpenConfig data for each device.
-func compute(reportCh chan<- report.Message, ingestorRepo *repository.Assets, devices map[string]*device.Device) error {
+func compute(reportCh chan<- report.Message, ingestorRepo *repository.Assets, devices map[string]*device.Device) (uint32, error) {
 	wg := sync.WaitGroup{}
 
 	failed := false
+	var builtCount atomic.Uint32
 	var mutex sync.Mutex
 
 	for _, dev := range ingestorRepo.DeviceInventory {
@@ -70,16 +72,23 @@ func compute(reportCh chan<- report.Message, ingestorRepo *repository.Assets, de
 				mutex.Lock()
 				failed = true
 				mutex.Unlock()
+			} else {
+				mutex.Lock()
+				builtCount.Add(1)
+				mutex.Unlock()
 			}
 		}(devices[dev.Hostname])
 	}
 
 	wg.Wait()
+
+	successfullyBuilt := builtCount.Load()
+
 	if failed {
-		return errors.New("OpenConfig conversion failed")
+		return successfullyBuilt, errors.New("OpenConfig conversion failed")
 	}
 
-	return nil
+	return successfullyBuilt, nil
 }
 
 // RunBuild start the build pipeline to convert CMDB data to OpenConfig for each devices.
@@ -87,8 +96,8 @@ func compute(reportCh chan<- report.Message, ingestorRepo *repository.Assets, de
 //   - fetch data using ingestors (one ingestor = one data source API endpoint)
 //   - precompute data to make them usable
 //   - compute to OpenConfig
-func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.PerformanceStats, error) {
-	stats := report.PerformanceStats{}
+func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.Stats, error) {
+	stats := report.Stats{}
 	startTime := time.Now()
 
 	// Fetch data from CMDB
@@ -99,12 +108,12 @@ func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.P
 	ingestorRepo.PrintStats()
 	ingestorRepo.ReportStats(reportCh)
 	ingestorFetchFinishTime := time.Now()
-	stats.DataFetchingDuration = ingestorFetchFinishTime.Sub(startTime)
+	stats.Performance.DataFetchingDuration = ingestorFetchFinishTime.Sub(startTime)
 
 	// Precompute data per device
 	devices, precomputeError := precompute(reportCh, ingestorRepo)
 	precomputeFinishTime := time.Now()
-	stats.PrecomputeDuration = precomputeFinishTime.Sub(ingestorFetchFinishTime)
+	stats.Performance.PrecomputeDuration = precomputeFinishTime.Sub(ingestorFetchFinishTime)
 
 	// We stop here if the user decided all device configuration must have been built with success
 	if precomputeError != nil {
@@ -119,11 +128,12 @@ func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.P
 	}
 
 	// Generate openconfig for all devices
-	computeError := compute(reportCh, ingestorRepo, devices)
+	successfullyBuilt, computeError := compute(reportCh, ingestorRepo, devices)
 	computeTime := time.Now()
-	stats.ComputeDuration = computeTime.Sub(precomputeFinishTime)
-	stats.BuildDuration = computeTime.Sub(startTime)
+	stats.Performance.ComputeDuration = computeTime.Sub(precomputeFinishTime)
+	stats.Performance.BuildDuration = computeTime.Sub(startTime)
 
+	stats.BuiltDevicesCount = successfullyBuilt
 	stats.Log()
 
 	if computeError != nil {
@@ -150,16 +160,22 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 		reports.UpdateStatus(report.InProgress)
 		if devs, stats, err := RunBuild(reportCh); err != nil {
 			metricsRegistry.BuildFailed()
+
 			reports.UpdateStatus(report.Failed)
-			reports.UpdatePerformanceStats(stats)
+			reports.UpdateStats(stats)
+
 			log.Error().Err(err).Msg("build failed")
 		} else {
 			deviceRepo.Set(devs)
-			log.Info().Msg("build successful")
+
 			metricsRegistry.BuildSuccessful()
+			metricsRegistry.SetBuiltDevices(stats.BuiltDevicesCount)
+
 			reports.UpdateStatus(report.Success)
-			reports.UpdatePerformanceStats(stats)
+			reports.UpdateStats(stats)
 			reports.MarkAsSuccessful()
+
+			log.Info().Msg("build successful")
 		}
 
 		reports.MarkAsComplete()

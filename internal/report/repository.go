@@ -48,10 +48,10 @@ func (r *Repository) UpdateStatus(status jobStatus) {
 	r.last.Status = status
 }
 
-func (r *Repository) UpdatePerformanceStats(stats PerformanceStats) {
+func (r *Repository) UpdateStats(stats Stats) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.last.Performance = stats
+	r.last.Stats = stats
 }
 
 func (r *Repository) MarkAsComplete() {
