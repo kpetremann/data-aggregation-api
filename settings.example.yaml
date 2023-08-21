@@ -16,6 +16,7 @@ Authentication:
     BindDN: "cn=<user>,OU=<ou>,DC=<local>"
     BaseDN: "DC=<local>"
     Password: "<some_password>"
+    MaxWorkers: 10
 
 NetBox:
   URL: "https://netbox.local"

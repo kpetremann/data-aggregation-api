@@ -20,8 +20,6 @@ const (
 
 type authMode string
 
-const maxLDAPWorkers = 1
-
 const (
 	noAuth   authMode = "None"
 	ldapMode authMode = "LDAP"
@@ -57,7 +55,9 @@ func NewBasicAuth(ctx context.Context, cfg config.AuthConfig) (BasicAuth, error)
 		log.Warn().Err(err).Msg("failed to close LDAP test connection")
 	}
 
-	ldap.StartWorkers(ctx, maxLDAPWorkers)
+	if err := ldap.StartWorkers(ctx, cfg.LDAP.MaxWorkers); err != nil {
+		return b, fmt.Errorf("failed to start LDAP workers: %w", err)
+	}
 
 	return b, nil
 }

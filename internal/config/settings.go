@@ -15,6 +15,8 @@ const (
 	defaultListenPort    = 8080
 	localPath            = "."
 
+	defaultMaxLDAPWorkers = 10
+
 	SiteFilter       Filter = "site"
 	SiteGroupFilter  Filter = "site_group"
 	SiteRegionFilter Filter = "region"
@@ -56,6 +58,7 @@ type LDAPConfig struct {
 	BindDN             string
 	Password           string
 	InsecureSkipVerify bool
+	MaxWorkers         int
 }
 
 func setDefaults() {
@@ -78,6 +81,7 @@ func setDefaults() {
 	viper.SetDefault("Authentication.LDAP.BindDN", "")
 	viper.SetDefault("Authentication.LDAP.Password", "")
 	viper.SetDefault("Authentication.LDAP.InsecureSkipVerify", false)
+	viper.SetDefault("Authentication.LDAP.MaxWorkers", defaultMaxLDAPWorkers)
 }
 
 func LoadConfig() error {

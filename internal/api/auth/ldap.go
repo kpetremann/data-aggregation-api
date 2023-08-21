@@ -37,10 +37,14 @@ func NewLDAPAuth(ldapURL string, bindDN string, password string, baseDN string, 
 	}
 }
 
-func (l *LDAPAuth) StartWorkers(ctx context.Context, maxWorker int) {
+func (l *LDAPAuth) StartWorkers(ctx context.Context, maxWorker int) error {
+	if maxWorker <= 0 {
+		return fmt.Errorf("maxWorker must be greater than 0")
+	}
 	for i := 0; i < maxWorker; i++ {
 		go l.spawnWorker(ctx)
 	}
+	return nil
 }
 
 func (l *LDAPAuth) AuthenticateUser(username string, password string) bool {
