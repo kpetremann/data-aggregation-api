@@ -6,13 +6,13 @@ build:
 	go build -ldflags="-X 'github.com/criteo/data-aggregation-api/internal/version.version=$(VER)' \
                    -X 'github.com/criteo/data-aggregation-api/internal/version.buildUser=$(USER)' \
                    -X 'github.com/criteo/data-aggregation-api/internal/version.buildTime=$(BUILDDATE)'" \
-                  -o .build/data_aggregation_api ./cmd/data_aggregation_api
+                  -o .build/data-aggregation-api ./cmd/data-aggregation-api
 
 run:
 	go run -ldflags="-X 'github.com/criteo/data-aggregation-api/internal/version.version=$(VER)' \
                  -X 'github.com/criteo/data-aggregation-api/internal/version.buildUser=$(USER)' \
                  -X 'github.com/criteo/data-aggregation-api/internal/version.buildTime=$(BUILDDATE)'" \
-                ./cmd/data_aggregation_api
+                ./cmd/data-aggregation-api
 
 update_openconfig:
 	./update_openconfig.sh

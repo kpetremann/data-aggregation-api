@@ -39,7 +39,7 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 		log.Warn().Msg("Shutdown.")
 	}()
 
-	withAuth, err := auth.NewBasicAuth(config.Cfg.Authentication)
+	withAuth, err := auth.NewBasicAuth(ctx, config.Cfg.Authentication)
 	if err != nil {
 		return err
 	}
