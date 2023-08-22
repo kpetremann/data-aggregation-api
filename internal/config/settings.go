@@ -16,6 +16,7 @@ const (
 	localPath            = "."
 
 	defaultMaxLDAPWorkers = 10
+	defaultLDAPTimeout    = 10 * time.Second
 
 	SiteFilter       Filter = "site"
 	SiteGroupFilter  Filter = "site_group"
@@ -57,6 +58,7 @@ type LDAPConfig struct {
 	BaseDN             string
 	BindDN             string
 	Password           string
+	Timeout            time.Duration
 	InsecureSkipVerify bool
 	MaxWorkers         int
 }
@@ -82,6 +84,7 @@ func setDefaults() {
 	viper.SetDefault("Authentication.LDAP.Password", "")
 	viper.SetDefault("Authentication.LDAP.InsecureSkipVerify", false)
 	viper.SetDefault("Authentication.LDAP.MaxWorkers", defaultMaxLDAPWorkers)
+	viper.SetDefault("Authentication.LDAP.Timeout", defaultLDAPTimeout)
 }
 
 func LoadConfig() error {
