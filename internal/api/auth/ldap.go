@@ -49,16 +49,17 @@ func NewLDAPAuth(ldapURL string, bindDN string, password string, baseDN string, 
 	}
 }
 
-func SetDefaultTimeout(timeout time.Duration) {
+func SetLDAPDefaultTimeout(timeout time.Duration) {
 	ldap.DefaultTimeout = timeout //nolint:reassign  // we want to customize the default timeout
 }
 
-func (l *LDAPAuth) StartWorkers(ctx context.Context, maxWorker int) error {
-	if maxWorker <= 0 {
-		return fmt.Errorf("maxWorker must be greater than 0")
+// StartAuthenticationWorkers starts a pool of workers that will handle the authentication requests.
+func (l *LDAPAuth) StartAuthenticationWorkers(ctx context.Context, workersCount int) error {
+	if workersCount <= 0 {
+		return fmt.Errorf("'WorkersCount' must be greater than 0: %d", workersCount)
 	}
-	for i := 0; i < maxWorker; i++ {
-		go l.spawnWorker(ctx)
+	for i := 0; i < workersCount; i++ {
+		go l.spawnConnectionWorker(ctx)
 	}
 	return nil
 }
@@ -72,11 +73,12 @@ func (l *LDAPAuth) AuthenticateUser(username string, password string) bool {
 	return <-req.authResp
 }
 
-func (l *LDAPAuth) spawnWorker(ctx context.Context) {
+func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 	const maxRetry = 1
+	const maxReusageDuration = time.Minute
 	var conn *ldap.Conn
 	var err error
-	tick := time.NewTicker(time.Minute)
+	tick := time.NewTicker(maxReusageDuration)
 
 	for {
 		select {
@@ -99,6 +101,7 @@ func (l *LDAPAuth) spawnWorker(ctx context.Context) {
 
 				// bind with the user credentials
 				var connState connectionStatus
+				// ctxTimeout, cancel := context.WithDeadline(ctx, time.Now().Add(l.maxConnectionLifetime))
 				auth, connState = l.authenticateWithTimeout(ctx, conn, req.username, req.password, ldap.DefaultTimeout)
 
 				if connState == connectionClosed {
@@ -116,17 +119,12 @@ func (l *LDAPAuth) spawnWorker(ctx context.Context) {
 			log.Debug().Msgf("worker LDAP authentication attempt number %d, result: %t", retry, auth)
 
 			req.authResp <- auth
-			tick.Reset(time.Minute)
+			tick.Reset(maxReusageDuration)
 
 		case <-tick.C:
 			// close connection if no request has been made for a minute
 			log.Debug().Msg("timer reached, closing connection")
-			if conn != nil {
-				if err := conn.Close(); err != nil {
-					log.Error().Err(err).Msg("unable to close the LDAP connection")
-				}
-			}
-			return
+			closeLDAPConnection(conn)
 
 		case <-ctx.Done():
 			// gracefully close connection if context is done
@@ -139,14 +137,16 @@ func (l *LDAPAuth) spawnWorker(ctx context.Context) {
 
 func closeLDAPConnection(conn *ldap.Conn) {
 	if conn != nil && !conn.IsClosing() {
-		_ = conn.Close()
+		if err := conn.Close(); err != nil {
+			log.Error().Err(err).Msg("unable to close the LDAP connection")
+		}
 	}
 }
 
 // authenticateWithTimeout performs the authentication against LDAP with a timeout.
 func (l *LDAPAuth) authenticateWithTimeout(ctx context.Context, conn *ldap.Conn, username, password string, timeout time.Duration) (bool, connectionStatus) {
 	// request the authentication
-	res := make(chan result)
+	res := make(chan result, 1)
 	go func() {
 		a, c := l.authenticate(conn, username, password)
 		res <- result{auth: a, conn: c}

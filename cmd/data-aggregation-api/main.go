@@ -59,9 +59,9 @@ func run() error {
 	// Configure LDAP timeout
 	if config.Cfg.Authentication.LDAP != nil {
 		if config.Cfg.Authentication.LDAP.Timeout <= 0 {
-			return fmt.Errorf("LDAP timeout must be greater than 0")
+			return fmt.Errorf("LDAP timeout must be greater than 0: %d", config.Cfg.Authentication.LDAP.Timeout)
 		}
-		auth.SetDefaultTimeout(config.Cfg.Authentication.LDAP.Timeout)
+		auth.SetLDAPDefaultTimeout(config.Cfg.Authentication.LDAP.Timeout)
 	}
 
 	deviceRepo := device.NewSafeRepository()

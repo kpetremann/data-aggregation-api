@@ -15,8 +15,8 @@ const (
 	defaultListenPort    = 8080
 	localPath            = "."
 
-	defaultMaxLDAPWorkers = 10
-	defaultLDAPTimeout    = 10 * time.Second
+	defaultLDAPWorkersCount = 10
+	defaultLDAPTimeout      = 10 * time.Second
 
 	SiteFilter       Filter = "site"
 	SiteGroupFilter  Filter = "site_group"
@@ -60,7 +60,7 @@ type LDAPConfig struct {
 	Password           string
 	Timeout            time.Duration
 	InsecureSkipVerify bool
-	MaxWorkers         int
+	WorkersCount       int
 }
 
 func setDefaults() {
@@ -83,7 +83,7 @@ func setDefaults() {
 	viper.SetDefault("Authentication.LDAP.BindDN", "")
 	viper.SetDefault("Authentication.LDAP.Password", "")
 	viper.SetDefault("Authentication.LDAP.InsecureSkipVerify", false)
-	viper.SetDefault("Authentication.LDAP.MaxWorkers", defaultMaxLDAPWorkers)
+	viper.SetDefault("Authentication.LDAP.WorkersCount", defaultLDAPWorkersCount)
 	viper.SetDefault("Authentication.LDAP.Timeout", defaultLDAPTimeout)
 }
 

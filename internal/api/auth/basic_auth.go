@@ -49,13 +49,15 @@ func NewBasicAuth(ctx context.Context, cfg config.AuthConfig) (BasicAuth, error)
 	// trying a connection to LDAP to check the configuration
 	conn, err := ldap.connect()
 	if err != nil {
-		return b, fmt.Errorf("test LDAP connection: %w", err)
+		log.Warn().Err(err).Msg("test connection to LDAP failed")
 	}
-	if err := conn.Close(); err != nil {
-		log.Warn().Err(err).Msg("failed to close LDAP test connection")
+	if conn != nil {
+		if err := conn.Close(); err != nil {
+			log.Warn().Err(err).Msg("failed to close LDAP test connection")
+		}
 	}
 
-	if err := ldap.StartWorkers(ctx, cfg.LDAP.MaxWorkers); err != nil {
+	if err := ldap.StartAuthenticationWorkers(ctx, cfg.LDAP.WorkersCount); err != nil {
 		return b, fmt.Errorf("failed to start LDAP workers: %w", err)
 	}
 
