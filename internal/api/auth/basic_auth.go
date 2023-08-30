@@ -44,6 +44,7 @@ func NewBasicAuth(ctx context.Context, cfg config.AuthConfig) (BasicAuth, error)
 	if err := b.configureLdap(ldap); err != nil {
 		return b, fmt.Errorf("failed to configure the request authenticator: %w", err)
 	}
+	ldap.SetMaxConnectionLifetime(cfg.LDAP.MaxConnectionLifetime)
 	b.mode = ldapMode
 
 	// trying a connection to LDAP to check the configuration

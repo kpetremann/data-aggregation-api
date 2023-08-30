@@ -54,13 +54,14 @@ type AuthConfig struct {
 }
 
 type LDAPConfig struct {
-	URL                string
-	BaseDN             string
-	BindDN             string
-	Password           string
-	Timeout            time.Duration
-	InsecureSkipVerify bool
-	WorkersCount       int
+	URL                   string
+	BaseDN                string
+	BindDN                string
+	Password              string
+	Timeout               time.Duration
+	MaxConnectionLifetime time.Duration
+	InsecureSkipVerify    bool
+	WorkersCount          int
 }
 
 func setDefaults() {
@@ -85,6 +86,7 @@ func setDefaults() {
 	viper.SetDefault("Authentication.LDAP.InsecureSkipVerify", false)
 	viper.SetDefault("Authentication.LDAP.WorkersCount", defaultLDAPWorkersCount)
 	viper.SetDefault("Authentication.LDAP.Timeout", defaultLDAPTimeout)
+	viper.SetDefault("Authentication.LDAP.MaxConnectionLifetime", time.Minute)
 }
 
 func LoadConfig() error {

@@ -30,12 +30,13 @@ type result struct {
 }
 
 type LDAPAuth struct {
-	tlsConfig *tls.Config
-	reqCh     chan authRequest
-	ldapURL   string
-	bindDN    string
-	password  string
-	baseDN    string
+	tlsConfig             *tls.Config
+	reqCh                 chan authRequest
+	ldapURL               string
+	bindDN                string
+	password              string
+	baseDN                string
+	maxConnectionLifetime time.Duration
 }
 
 func NewLDAPAuth(ldapURL string, bindDN string, password string, baseDN string, tlsConfig *tls.Config) *LDAPAuth {
@@ -51,6 +52,14 @@ func NewLDAPAuth(ldapURL string, bindDN string, password string, baseDN string, 
 
 func SetLDAPDefaultTimeout(timeout time.Duration) {
 	ldap.DefaultTimeout = timeout //nolint:reassign  // we want to customize the default timeout
+}
+
+// SetMaxConnectionLifetime sets the maximum lifetime of a connection.
+//
+// The maximum lifetime is the maximum amount of time a connection may be reused for.
+// This is not a guarantee, as the connection may have been closed by the server before reaching that timer.
+func (l *LDAPAuth) SetMaxConnectionLifetime(maxConnectionLifetime time.Duration) {
+	l.maxConnectionLifetime = maxConnectionLifetime
 }
 
 // StartAuthenticationWorkers starts a pool of workers that will handle the authentication requests.
@@ -75,10 +84,9 @@ func (l *LDAPAuth) AuthenticateUser(username string, password string) bool {
 
 func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 	const maxRetry = 1
-	const maxReusageDuration = time.Minute
 	var conn *ldap.Conn
 	var err error
-	tick := time.NewTicker(maxReusageDuration)
+	tick := time.NewTicker(l.maxConnectionLifetime)
 
 	for {
 		select {
@@ -119,7 +127,7 @@ func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 			log.Debug().Msgf("worker LDAP authentication attempt number %d, result: %t", retry, auth)
 
 			req.authResp <- auth
-			tick.Reset(maxReusageDuration)
+			tick.Reset(l.maxConnectionLifetime)
 
 		case <-tick.C:
 			// close connection if no request has been made for a minute
