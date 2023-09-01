@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 )
 
 type connectionStatus bool
+
+var ErrLDAPTimeout = errors.New("LDAP timeout")
 
 const (
 	connectionClosed connectionStatus = false
@@ -109,8 +112,9 @@ func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 
 				// bind with the user credentials
 				var connState connectionStatus
-				// ctxTimeout, cancel := context.WithDeadline(ctx, time.Now().Add(l.maxConnectionLifetime))
-				auth, connState = l.authenticateWithTimeout(ctx, conn, req.username, req.password, ldap.DefaultTimeout)
+				ctxTimeout, cancel := context.WithTimeoutCause(ctx, ldap.DefaultTimeout, ErrLDAPTimeout)
+				auth, connState = l.authenticateWithTimeout(ctxTimeout, conn, req.username, req.password)
+				cancel()
 
 				if connState == connectionClosed {
 					log.Debug().Msg("LDAP connection was closed by the server, closing on client side")
@@ -152,7 +156,7 @@ func closeLDAPConnection(conn *ldap.Conn) {
 }
 
 // authenticateWithTimeout performs the authentication against LDAP with a timeout.
-func (l *LDAPAuth) authenticateWithTimeout(ctx context.Context, conn *ldap.Conn, username, password string, timeout time.Duration) (bool, connectionStatus) {
+func (l *LDAPAuth) authenticateWithTimeout(ctx context.Context, conn *ldap.Conn, username, password string) (bool, connectionStatus) {
 	// request the authentication
 	res := make(chan result, 1)
 	go func() {
@@ -168,13 +172,14 @@ func (l *LDAPAuth) authenticateWithTimeout(ctx context.Context, conn *ldap.Conn,
 	case r := <-res:
 		auth = r.auth
 		connState = r.conn
-	case <-time.After(timeout):
-		log.Error().Msg("LDAP authentication timeout")
-		closeLDAPConnection(conn)
-		auth = false
-		connState = connectionClosed
 	case <-ctx.Done():
 		auth = false
+		if errors.Is(context.Cause(ctx), ErrLDAPTimeout) {
+			log.Error().Msg("LDAP authentication timeout")
+			closeLDAPConnection(conn)
+		} else {
+			connState = connectionClosed
+		}
 	}
 	return auth, connState
 }
