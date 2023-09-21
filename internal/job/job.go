@@ -157,8 +157,10 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 			reports.Watch(reportCh)
 		}()
 
+		// Start the build
 		reports.UpdateStatus(report.InProgress)
-		if devs, stats, err := RunBuild(reportCh); err != nil {
+		devs, stats, err := RunBuild(reportCh)
+		if err != nil {
 			metricsRegistry.BuildFailed()
 
 			reports.UpdateStatus(report.Failed)
@@ -177,6 +179,11 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 
 			log.Info().Msg("build successful")
 		}
+
+		metricsRegistry.SetBuildDataFetchingDuration(stats.Performance.DataFetchingDuration.Seconds())
+		metricsRegistry.SetBuildPrecomputeDuration(stats.Performance.PrecomputeDuration.Seconds())
+		metricsRegistry.SetBuildComputeDuration(stats.Performance.ComputeDuration.Seconds())
+		metricsRegistry.SetBuildTotalDuration(stats.Performance.BuildDuration.Seconds())
 
 		reports.MarkAsComplete()
 		close(reportCh)
