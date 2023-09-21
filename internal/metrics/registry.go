@@ -7,7 +7,7 @@ import (
 )
 
 type Registry struct {
-	AppInfo            *prometheus.GaugeVec
+	appInfo            *prometheus.GaugeVec
 	buildTotal         *prometheus.CounterVec
 	BuiltDevicesNumber prometheus.Gauge
 	lastBuildStatus    prometheus.Gauge
@@ -29,7 +29,7 @@ func NewRegistry() Registry {
 	appInfo.WithLabelValues(app.Info.Version, app.Info.Commit, app.Info.BuildTime, app.Info.BuildUser).Set(1)
 
 	return Registry{
-		AppInfo: appInfo,
+		appInfo: appInfo,
 		BuiltDevicesNumber: promauto.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "built_devices_number",
