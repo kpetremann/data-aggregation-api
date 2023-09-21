@@ -8,9 +8,9 @@ import (
 
 type Registry struct {
 	AppInfo            *prometheus.GaugeVec
-	BuiltDevicesNumber *prometheus.GaugeVec
-	lastBuildStatus    *prometheus.GaugeVec
 	buildTotal         *prometheus.CounterVec
+	BuiltDevicesNumber prometheus.Gauge
+	lastBuildStatus    prometheus.Gauge
 
 	buildTotalDuration        prometheus.Gauge
 	buildDataFetchingDuration prometheus.Gauge
@@ -30,20 +30,18 @@ func NewRegistry() Registry {
 
 	return Registry{
 		AppInfo: appInfo,
-		BuiltDevicesNumber: promauto.NewGaugeVec(
+		BuiltDevicesNumber: promauto.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "built_devices_number",
 				Help: "Number of devices built during last successful build",
 			},
-			[]string{},
 		),
 
-		lastBuildStatus: promauto.NewGaugeVec(
+		lastBuildStatus: promauto.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "build_status",
 				Help: "Last completed build status, 0=Failed, 1=Success",
 			},
-			[]string{},
 		),
 		buildTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -84,7 +82,7 @@ func NewRegistry() Registry {
 // `build_status` counter is set to 1.
 // `completed_build_total` increases with success label set to true.
 func (r *Registry) BuildSuccessful() {
-	r.lastBuildStatus.WithLabelValues().Set(1)
+	r.lastBuildStatus.Set(1)
 	r.buildTotal.WithLabelValues("true").Inc()
 }
 
@@ -93,13 +91,13 @@ func (r *Registry) BuildSuccessful() {
 // `build_status` counter is set to 0.
 // `completed_build_total` increases with success label set to false.
 func (r *Registry) BuildFailed() {
-	r.lastBuildStatus.WithLabelValues().Set(0)
+	r.lastBuildStatus.Set(0)
 	r.buildTotal.WithLabelValues("false").Inc()
 }
 
 // SetBuiltDevices updates the `built_devices` gauge.
 func (r *Registry) SetBuiltDevices(count uint32) {
-	r.BuiltDevicesNumber.WithLabelValues().Set(float64(count))
+	r.BuiltDevicesNumber.Set(float64(count))
 }
 
 // SetBuildTotalDuration updates the `build_total_duration_seconds` gauge.
