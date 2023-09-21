@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -29,7 +30,7 @@ type BasicAuth struct {
 	mode     authMode
 }
 
-func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
+func NewBasicAuth(ctx context.Context, cfg config.AuthConfig) (BasicAuth, error) {
 	b := BasicAuth{mode: noAuth}
 
 	if cfg.LDAP == nil {
@@ -43,7 +44,23 @@ func NewBasicAuth(cfg config.AuthConfig) (BasicAuth, error) {
 	if err := b.configureLdap(ldap); err != nil {
 		return b, fmt.Errorf("failed to configure the request authenticator: %w", err)
 	}
+	ldap.SetMaxConnectionLifetime(cfg.LDAP.MaxConnectionLifetime)
 	b.mode = ldapMode
+
+	// trying a connection to LDAP to check the configuration
+	conn, err := ldap.connect()
+	if err != nil {
+		log.Warn().Err(err).Msg("test connection to LDAP failed")
+	}
+	if conn != nil {
+		if err := conn.Close(); err != nil {
+			log.Warn().Err(err).Msg("failed to close LDAP test connection")
+		}
+	}
+
+	if err := ldap.StartAuthenticationWorkers(ctx, cfg.LDAP.WorkersCount); err != nil {
+		return b, fmt.Errorf("failed to start LDAP workers: %w", err)
+	}
 
 	return b, nil
 }

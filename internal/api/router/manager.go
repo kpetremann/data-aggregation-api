@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
@@ -14,6 +15,8 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/report"
 	"github.com/julienschmidt/httprouter"
 )
+
+const shutdownTimeout = 5 * time.Second
 
 type DevicesRepository interface {
 	Set(devices map[string]*device.Device)
@@ -39,7 +42,7 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 		log.Warn().Msg("Shutdown.")
 	}()
 
-	withAuth, err := auth.NewBasicAuth(config.Cfg.Authentication)
+	withAuth, err := auth.NewBasicAuth(ctx, config.Cfg.Authentication)
 	if err != nil {
 		return err
 	}
@@ -63,12 +66,15 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	// TODO: handle http failure! with a channel
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
-			log.Error().Err(err).Send()
+			log.Error().Err(err).Msg("stopped to listen and serve")
 		}
 	}()
 
 	<-ctx.Done()
-	if err := httpServer.Shutdown(context.Background()); err != nil {
+	ctxCancel, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := httpServer.Shutdown(ctxCancel); err != nil {
 		log.Error().Err(err).Send()
 	}
 

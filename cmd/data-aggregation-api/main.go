@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/criteo/data-aggregation-api/internal/api/auth"
 	"github.com/criteo/data-aggregation-api/internal/api/router"
 	"github.com/criteo/data-aggregation-api/internal/app"
 	"github.com/criteo/data-aggregation-api/internal/config"
@@ -54,6 +55,14 @@ func run() error {
 	log.Info().Str("commit", commit).Send()
 	log.Info().Str("build-time", date).Send()
 	log.Info().Str("build-user", builtBy).Send()
+
+	// Configure LDAP timeout
+	if config.Cfg.Authentication.LDAP != nil {
+		if config.Cfg.Authentication.LDAP.Timeout <= 0 {
+			return fmt.Errorf("LDAP timeout must be greater than 0: %d", config.Cfg.Authentication.LDAP.Timeout)
+		}
+		auth.SetLDAPDefaultTimeout(config.Cfg.Authentication.LDAP.Timeout)
+	}
 
 	deviceRepo := device.NewSafeRepository()
 	reports := report.NewRepository()

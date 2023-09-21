@@ -15,6 +15,9 @@ const (
 	defaultListenPort    = 8080
 	localPath            = "."
 
+	defaultLDAPWorkersCount = 10
+	defaultLDAPTimeout      = 10 * time.Second
+
 	SiteFilter       Filter = "site"
 	SiteGroupFilter  Filter = "site_group"
 	SiteRegionFilter Filter = "region"
@@ -51,11 +54,14 @@ type AuthConfig struct {
 }
 
 type LDAPConfig struct {
-	URL                string
-	BaseDN             string
-	BindDN             string
-	Password           string
-	InsecureSkipVerify bool
+	URL                   string
+	BaseDN                string
+	BindDN                string
+	Password              string
+	Timeout               time.Duration
+	MaxConnectionLifetime time.Duration
+	InsecureSkipVerify    bool
+	WorkersCount          int
 }
 
 func setDefaults() {
@@ -78,6 +84,9 @@ func setDefaults() {
 	viper.SetDefault("Authentication.LDAP.BindDN", "")
 	viper.SetDefault("Authentication.LDAP.Password", "")
 	viper.SetDefault("Authentication.LDAP.InsecureSkipVerify", false)
+	viper.SetDefault("Authentication.LDAP.WorkersCount", defaultLDAPWorkersCount)
+	viper.SetDefault("Authentication.LDAP.Timeout", defaultLDAPTimeout)
+	viper.SetDefault("Authentication.LDAP.MaxConnectionLifetime", time.Minute)
 }
 
 func LoadConfig() error {
