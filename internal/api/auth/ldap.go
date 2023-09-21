@@ -86,7 +86,7 @@ func (l *LDAPAuth) AuthenticateUser(username string, password string) bool {
 }
 
 func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
-	const maxRetry = 1
+	const maxAttempts = 3
 	var conn *ldap.Conn
 	var err error
 	tick := time.NewTicker(l.maxConnectionLifetime)
@@ -95,10 +95,10 @@ func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 		select {
 		case req := <-l.reqCh:
 			auth := false
-			retry := 0
-			for retry <= maxRetry+1 {
-				retry++
-				log.Debug().Msgf("worker LDAP authentication attempt number %d", retry)
+			attempt := 1
+			for attempt <= maxAttempts {
+				attempt++
+				log.Debug().Msgf("worker LDAP authentication attempt number %d", attempt)
 				// (re)connect if needed
 				if conn == nil || conn.IsClosing() {
 					log.Debug().Msg("LDAP connection is closed, reconnecting")
@@ -112,9 +112,12 @@ func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 
 				// bind with the user credentials
 				var connState connectionStatus
-				ctxTimeout, cancel := context.WithTimeoutCause(ctx, ldap.DefaultTimeout, ErrLDAPTimeout)
-				auth, connState = l.authenticateWithTimeout(ctxTimeout, conn, req.username, req.password)
-				cancel()
+				func() {
+					// this anonymous function ensures the context is released as soon as possible (because of the for loop)
+					ctxTimeout, cancel := context.WithTimeoutCause(ctx, ldap.DefaultTimeout, ErrLDAPTimeout)
+					defer cancel()
+					auth, connState = l.authenticateWithTimeout(ctxTimeout, conn, req.username, req.password)
+				}()
 
 				if connState == connectionClosed {
 					log.Debug().Msg("LDAP connection was closed by the server, closing on client side")
@@ -128,13 +131,13 @@ func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 				}
 			}
 
-			log.Debug().Msgf("worker LDAP authentication attempt number %d, result: %t", retry, auth)
+			log.Debug().Msgf("worker LDAP authentication attempt number %d, result: %t", attempt, auth)
 
 			req.authResp <- auth
 			tick.Reset(l.maxConnectionLifetime)
 
 		case <-tick.C:
-			// close connection if no request has been made for a minute
+			// close connection if no request has been made
 			log.Debug().Msg("timer reached, closing connection")
 			closeLDAPConnection(conn)
 
@@ -195,7 +198,7 @@ func (l *LDAPAuth) connect() (*ldap.Conn, error) {
 
 // authenticate performs the authentication against LDAP.
 // The first returned boolean is true if the authentication is successful, false otherwise.
-// The second returned boolean is true if the connection is closed, false otherwise.
+// The second returned boolean is false if the connection is closed, true otherwise.
 func (l *LDAPAuth) authenticate(conn *ldap.Conn, username string, password string) (bool, connectionStatus) {
 	if err := conn.Bind(l.bindDN, l.password); err != nil {
 		log.Error().Err(err).Str("bindDN", l.bindDN).Msg("failed to bind to LDAP")
