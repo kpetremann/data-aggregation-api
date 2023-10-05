@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -35,7 +36,7 @@ func Get[R any](endpoint string, out *NetboxResponse[R], params url.Values) erro
 	const endpointKey = "endpoint"
 	client := http.Client{Timeout: 10 * 60 * time.Second}
 
-	params.Set("limit", "100")
+	params.Set("limit", strconv.Itoa(config.Cfg.NetBox.LimitPerPage))
 	params.Set("ordering", "id")
 	params.Set("pagination_mode", "cursor")
 
