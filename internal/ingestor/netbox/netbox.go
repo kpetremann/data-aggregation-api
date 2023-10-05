@@ -35,8 +35,9 @@ func Get[R any](endpoint string, out *NetboxResponse[R], params url.Values) erro
 	const endpointKey = "endpoint"
 	client := http.Client{Timeout: 10 * 60 * time.Second}
 
-	params.Set("limit", "0")
+	params.Set("limit", "100")
 	params.Set("ordering", "id")
+	params.Set("pagination_mode", "cursor")
 
 	baseURL, err := url.JoinPath(config.Cfg.NetBox.URL, endpoint)
 	if err != nil {
@@ -75,11 +76,7 @@ func Get[R any](endpoint string, out *NetboxResponse[R], params url.Values) erro
 		out.Results = append(out.Results, buffer.Results...)
 
 		// Print paging status
-		offset := data.Request.URL.Query().Get("offset")
-		if len(offset) == 0 {
-			offset = "0"
-		}
-		log.Debug().Str(endpointKey, endpoint).Msgf("status: %s/%d", offset, buffer.Count)
+		log.Debug().Str(endpointKey, endpoint).Msgf("next: %s", buffer.Next)
 
 		url = buffer.Next
 		out.Count = buffer.Count
