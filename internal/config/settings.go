@@ -21,6 +21,8 @@ const (
 	SiteFilter       Filter = "site"
 	SiteGroupFilter  Filter = "site_group"
 	SiteRegionFilter Filter = "region"
+
+	defaultLimitPerPage = 100
 )
 
 var (
@@ -33,6 +35,7 @@ type Config struct {
 		URL                 string
 		APIKey              string
 		DatacenterFilterKey Filter
+		LimitPerPage        int
 	}
 	Log struct {
 		Level  string
@@ -75,6 +78,7 @@ func setDefaults() {
 	viper.SetDefault("NetBox.URL", "")
 	viper.SetDefault("NetBox.APIKey", "")
 	viper.SetDefault("NetBox.DatacenterFilterKey", SiteFilter)
+	viper.SetDefault("NetBox.LimitPerPage", defaultLimitPerPage)
 
 	viper.SetDefault("Build.Interval", time.Minute)
 	viper.SetDefault("Build.AllDevicesMustBuild", false)
