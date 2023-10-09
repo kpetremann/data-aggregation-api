@@ -10,7 +10,7 @@ type SafeRepository struct {
 }
 
 type afkEnabledResponse struct {
-	SaltEnabled bool `json:"salt_enabled"`
+	AFKEnabled bool `json:"afk_enabled"`
 }
 
 func NewSafeRepository() SafeRepository {
