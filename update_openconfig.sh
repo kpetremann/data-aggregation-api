@@ -2,7 +2,7 @@ set -e
 
 VERSION=v2.3.0
 
-rm -rf internal/models/openconfig/*
+rm -rf internal/model/openconfig/*
 rm .build -rf
 mkdir .build && cd .build
 
