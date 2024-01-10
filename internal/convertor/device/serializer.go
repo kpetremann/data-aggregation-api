@@ -88,6 +88,10 @@ func (s *SafeRepository) GetDeviceOpenConfigJSON(hostname string) ([]byte, error
 	defer s.mutex.Unlock()
 
 	if dev, ok := s.devices[hostname]; ok {
+		if dev == nil {
+			return []byte(emptyJSON), errors.New("build failed for this device")
+		}
+
 		var config json.RawMessage
 		var err error
 		out := bytes.NewBuffer(nil)
