@@ -14,6 +14,7 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/model/dcim"
 	"github.com/criteo/data-aggregation-api/internal/model/openconfig"
 	"github.com/openconfig/ygot/ygot"
+	"github.com/rs/zerolog/log"
 )
 
 const AFKEnabledTag = "afk-enabled"
@@ -73,7 +74,7 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 
 	device.PeerGroups, ok = devicesData.PeerGroups[dcimInfo.Hostname]
 	if !ok {
-		return nil, fmt.Errorf("no peer-groups found for %s", dcimInfo.Hostname)
+		log.Warn().Msgf("no peer-groups found for %s", dcimInfo.Hostname)
 	}
 
 	device.PrefixLists, ok = devicesData.PrefixLists[dcimInfo.Hostname]
