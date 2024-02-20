@@ -28,7 +28,7 @@ func getVersion(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 }
 
 func prometheusMetrics(h http.Handler) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		h.ServeHTTP(w, r)
 	}
 }

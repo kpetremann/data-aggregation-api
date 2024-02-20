@@ -1,5 +1,4 @@
 Datacenter: "europe"
-LogLevel: "error"
 
 API:
   ListenAddress: "127.0.0.1"
@@ -11,17 +10,21 @@ Log:
 
 Authentication:
   LDAP:
-    InsecureSkipVerify: "false"
     URL: "ldaps://URL.local"
     BindDN: "cn=<user>,OU=<ou>,DC=<local>"
     BaseDN: "DC=<local>"
     Password: "<some_password>"
-    MaxWorkers: 10
+    WorkersCount: 10
+    Timeout: 5s
+    MaxConnectionLifetime: 1m
+    InsecureSkipVerify: false
 
 NetBox:
   URL: "https://netbox.local"
   APIKey: "<some_key>"
   DatacenterFilterKey: "site_group"
+  LimitPerPage: 500
 
 Build:
   Interval: "30m"
+  AllDevicesMustBuild: false
