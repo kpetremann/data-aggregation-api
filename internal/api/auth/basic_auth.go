@@ -81,7 +81,7 @@ func (b *BasicAuth) Wrap(next httprouter.Handle) httprouter.Handle {
 	case ldapMode:
 		return BasicAuthLDAP(b.ldapAuth, next)
 	default:
-		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 			log.Error().Str("auth-method", string(b.mode)).Str("authentication issue", "bad server configuration").Send()
 			http.Error(w, "authentication issue: bad server configuration", http.StatusInternalServerError)
 		}
