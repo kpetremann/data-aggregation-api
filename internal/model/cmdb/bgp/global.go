@@ -14,5 +14,5 @@ type BGPGlobal struct {
 	GracefulRestartTime        *uint16 `json:"graceful_restart_time"        validate:"omitempty"`
 	EcmpEnabled                *bool   `json:"ecmp"                         validate:"required"`
 	EcmpMaximumPaths           *uint32 `json:"ecmp_maximum_paths"           validate:"omitempty"`
-	RouterID                   string  `json:"router_id"                    validate:"required"`
+	RouterID                   string  `json:"router_id"                    validate:"omitempty"`
 }
