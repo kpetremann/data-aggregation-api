@@ -40,7 +40,7 @@ var (
 	builtBy = "unknown"
 )
 
-func dispatchSingleRequest(incoming chan struct{}) chan bool {
+func dispatchSingleRequest(incoming <-chan struct{}) chan bool {
 	outgoing := make(chan bool)
 
 	go func() {
