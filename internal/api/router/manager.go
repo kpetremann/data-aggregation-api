@@ -27,20 +27,20 @@ type DevicesRepository interface {
 }
 
 type Manager struct {
-	devices        DevicesRepository
-	reports        *report.Repository
-	restartRequest chan<- struct{}
+	devices         DevicesRepository
+	reports         *report.Repository
+	newBuildRequest chan<- struct{}
 }
 
 // NewManager creates and initializes a new API manager.
 func NewManager(deviceRepo DevicesRepository, reports *report.Repository, restartRequest chan<- struct{}) *Manager {
-	return &Manager{devices: deviceRepo, reports: reports, restartRequest: restartRequest}
+	return &Manager{devices: deviceRepo, reports: reports, newBuildRequest: restartRequest}
 }
 
 // ListenAndServe starts to serve Web API requests.
 func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) error {
 	defer func() {
-		close(m.restartRequest)
+		close(m.newBuildRequest)
 		log.Warn().Msg("Shutdown.")
 	}()
 

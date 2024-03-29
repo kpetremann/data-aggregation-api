@@ -137,7 +137,7 @@ func (m *Manager) getLastSuccessfulReport(w http.ResponseWriter, _ *http.Request
 func (m *Manager) triggerBuild(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
 	select {
-	case m.restartRequest <- struct{}{}:
+	case m.newBuildRequest <- struct{}{}:
 		_, _ = w.Write([]byte("{\"message\": \"new build request received\""))
 	default:
 		_, _ = w.Write([]byte("{\"message\": \"a build request is already pending\""))
