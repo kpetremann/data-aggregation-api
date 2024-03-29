@@ -40,14 +40,14 @@ var (
 	builtBy = "unknown"
 )
 
-func dispatchSingleRequest(incoming <-chan struct{}) chan bool {
-	outgoing := make(chan bool)
+func dispatchSingleRequest(incoming <-chan struct{}) chan struct{} {
+	outgoing := make(chan struct{})
 
 	go func() {
 		defer close(outgoing)
 		for range incoming {
 			log.Info().Msg("Received new build request.")
-			outgoing <- true
+			outgoing <- struct{}{}
 		}
 	}()
 

@@ -146,7 +146,7 @@ func RunBuild(reportCh chan report.Message) (map[string]*device.Device, report.S
 // StartBuildLoop starts the build in an infinite loop.
 //
 // Closing the triggerNewBuild channel will stop the loop.
-func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Repository, triggerNewBuild <-chan bool) {
+func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Repository, triggerNewBuild <-chan struct{}) {
 	metricsRegistry := metrics.NewRegistry()
 	for {
 		var wg sync.WaitGroup
@@ -193,8 +193,8 @@ func StartBuildLoop(deviceRepo router.DevicesRepository, reports *report.Reposit
 
 		select {
 		case <-time.After(config.Cfg.Build.Interval):
-		case c := <-triggerNewBuild:
-			if !c {
+		case _, ok := <-triggerNewBuild:
+			if !ok {
 				log.Info().Msg("triggerNewBuild channel closed, stopping build loop")
 				return
 			}
