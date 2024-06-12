@@ -35,4 +35,4 @@ You need to update the following part in the code:
 4. add your convertor in `internal/convertors/...`
 
 3. execute your convertor (`internal/convertors/device/device.go`):
-   - GenerateOpenconfig()
+   - Generateconfigs()

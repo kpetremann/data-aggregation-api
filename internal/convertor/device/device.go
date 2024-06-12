@@ -8,10 +8,13 @@ import (
 
 	bgpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/bgp"
 	rpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/routingpolicy"
+	snmpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/snmp"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
+	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
 	"github.com/criteo/data-aggregation-api/internal/model/dcim"
+	"github.com/criteo/data-aggregation-api/internal/model/ietf"
 	"github.com/criteo/data-aggregation-api/internal/model/openconfig"
 	"github.com/openconfig/ygot/ygot"
 	"github.com/rs/zerolog/log"
@@ -22,8 +25,10 @@ const AFKEnabledTag = "afk-enabled"
 var defaultInstance = "default"
 
 type GeneratedConfig struct {
-	Openconfig *openconfig.Device
-	JSON       string
+	IETF           *ietf.Device
+	JSONIETF       string
+	Openconfig     *openconfig.Device
+	JSONOpenConfig string
 }
 
 type Device struct {
@@ -31,6 +36,7 @@ type Device struct {
 	Dcim            *dcim.NetworkDevice
 	Config          *GeneratedConfig
 	BGPGlobalConfig *bgp.BGPGlobal
+	SNMP            *snmp.SNMP
 	Sessions        []*bgp.Session
 	PeerGroups      []*bgp.PeerGroup
 	PrefixLists     []*routingpolicy.PrefixList
@@ -92,12 +98,16 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		return nil, fmt.Errorf("no route-policies found for %s", dcimInfo.Hostname)
 	}
 
+	device.SNMP, ok = devicesData.SNMP[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no snmp found for %s", dcimInfo.Hostname)
+	}
 	return device, nil
 }
 
-// GenerateOpenconfig generate the OpenConfig data for the current device.
+// Generateconfigs generate the Config (openconfig & ietf) data for the current device.
 // The CMDB data must have been precomputed before running this method.
-func (d *Device) GenerateOpenconfig() error {
+func (d *Device) Generateconfigs() error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
@@ -139,23 +149,60 @@ func (d *Device) GenerateOpenconfig() error {
 			Indent:         "  ",
 		},
 	)
+
 	if err != nil {
 		return fmt.Errorf("failed to transform an openconfig device specification (%s) into JSON using ygot: %w", d.Dcim.Hostname, err)
 	}
 
 	d.Config = &GeneratedConfig{
-		Openconfig: &config,
-		JSON:       devJSON,
+		Openconfig:     &config,
+		JSONOpenConfig: devJSON,
+		IETF:           nil,
+		JSONIETF:       "{}",
 	}
 
+	if d.SNMP == nil {
+		log.Warn().Msgf("%s don't have a Snmp configuration, skip IetfConfig", d.Dcim.Hostname)
+	} else {
+		IetfSystem := snmpconvertors.SNMPtoIETFfSystem(d.SNMP)
+		IetfSnmp := snmpconvertors.SNMPtoIETFsnmp(d.SNMP)
+
+		d.Config.IETF = &ietf.Device{
+			System: &IetfSystem,
+			Snmp:   &IetfSnmp,
+		}
+
+		d.Config.JSONIETF, err = ygot.EmitJSON(
+			d.Config.IETF,
+			&ygot.EmitJSONConfig{
+				Format:         ygot.RFC7951,
+				SkipValidation: false,
+				Indent:         "  ",
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to transform an ietf device specification (%s) into JSON using ygot: %w", d.Dcim.Hostname, err)
+		}
+	}
 	return nil
 }
 
-// GetCompactJSON returns OpenConfig result in not indented JSON format.
+// GetCompactOpenconfigJSON returns OpenConfig result in not indented JSON format.
 // Generated JSON is already indented by Ygot - currently there is no option to not indent the JSON.
-func (d *Device) GetCompactJSON() ([]byte, error) {
+func (d *Device) GetCompactOpenconfigJSON() ([]byte, error) {
 	out := bytes.NewBuffer(nil)
-	err := json.Compact(out, []byte(d.Config.JSON))
+	err := json.Compact(out, []byte(d.Config.JSONOpenConfig))
+	if err != nil {
+		return nil, err
+	}
+	return out.Bytes(), nil
+}
+
+// GetCompactIETFJSON returns IETF result in not indented JSON format.
+// GetCompactIETFJSON JSON is already indented by Ygot - currently there is no option to not indent the JSON.
+func (d *Device) GetCompactIETFJSON() ([]byte, error) {
+	out := bytes.NewBuffer(nil)
+	err := json.Compact(out, []byte(d.Config.JSONIETF))
 	if err != nil {
 		return nil, err
 	}

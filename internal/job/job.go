@@ -63,7 +63,7 @@ func compute(reportCh chan<- report.Message, ingestorRepo *repository.Assets, de
 		wg.Add(1)
 		go func(dev *device.Device) {
 			defer wg.Done()
-			if err := dev.GenerateOpenconfig(); err != nil {
+			if err := dev.Generateconfigs(); err != nil {
 				reportCh <- report.Message{
 					Type:     report.PrecomputeMessage,
 					Severity: report.Error,

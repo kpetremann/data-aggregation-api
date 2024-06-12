@@ -92,6 +92,56 @@ func (m *Manager) getDeviceOpenConfig(w http.ResponseWriter, _ *http.Request, ps
 	_, _ = w.Write(cfg)
 }
 
+// getDeviceIETFConfig endpoint returns Ietf JSON for one or all devices.
+func (m *Manager) getDeviceIETFConfig(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	w.Header().Set(contentType, applicationJSON)
+	hostname := ps.ByName(hostnameKey)
+	if ps.ByName(hostnameKey) == wildcard {
+		cfg, err := m.devices.GetAllDevicesIETFConfigJSON()
+		if err != nil {
+			log.Error().Err(err).Send()
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		_, _ = w.Write(cfg)
+		return
+	}
+
+	cfg, err := m.devices.GetDeviceIETFConfigJSON(hostname)
+	if err != nil {
+		log.Error().Err(err).Send()
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, _ = w.Write(cfg)
+}
+
+// getDeviceConfig endpoint returns Ietf & openconfig JSON for one or all devices.
+func (m *Manager) getDeviceConfig(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	w.Header().Set(contentType, applicationJSON)
+	hostname := ps.ByName(hostnameKey)
+	if ps.ByName(hostnameKey) == wildcard {
+		cfg, err := m.devices.GetAllDevicesConfigJSON()
+		if err != nil {
+			log.Error().Err(err).Send()
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		_, _ = w.Write(cfg)
+		return
+	}
+
+	cfg, err := m.devices.GetDeviceConfigJSON(hostname)
+	if err != nil {
+		log.Error().Err(err).Send()
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, _ = w.Write(cfg)
+}
+
 // getLastReport returns the last or current report.
 func (m *Manager) getLastReport(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	out, err := m.reports.GetLastJSON()

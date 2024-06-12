@@ -24,6 +24,10 @@ type DevicesRepository interface {
 	IsAFKEnabledJSON(hostname string) ([]byte, error)
 	GetAllDevicesOpenConfigJSON() ([]byte, error)
 	GetDeviceOpenConfigJSON(hostname string) ([]byte, error)
+	GetAllDevicesIETFConfigJSON() ([]byte, error)
+	GetDeviceIETFConfigJSON(hostname string) ([]byte, error)
+	GetAllDevicesConfigJSON() ([]byte, error)
+	GetDeviceConfigJSON(hostname string) ([]byte, error)
 }
 
 type Manager struct {
@@ -56,6 +60,8 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	router.GET("/api/health", healthCheck)
 	router.GET("/v1/devices/:hostname/afk_enabled", withAuth.Wrap(m.getAFKEnabled))
 	router.GET("/v1/devices/:hostname/openconfig", withAuth.Wrap(m.getDeviceOpenConfig))
+	router.GET("/v1/devices/:hostname/ietfconfig", withAuth.Wrap(m.getDeviceIETFConfig))
+	router.GET("/v1/devices/:hostname/config", withAuth.Wrap(m.getDeviceConfig))
 	router.GET("/v1/report/last", withAuth.Wrap(m.getLastReport))
 	router.GET("/v1/report/last/complete", withAuth.Wrap(m.getLastCompleteReport))
 	router.GET("/v1/report/last/successful", withAuth.Wrap(m.getLastSuccessfulReport))
