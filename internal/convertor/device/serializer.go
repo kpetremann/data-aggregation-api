@@ -1,7 +1,6 @@
 package device
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 
@@ -94,14 +93,8 @@ func (s *SafeRepository) GetDeviceOpenConfigJSON(hostname string) ([]byte, error
 
 		var config json.RawMessage
 		var err error
-		out := bytes.NewBuffer(nil)
 
 		if config, err = dev.GetCompactJSON(); err != nil {
-			log.Error().Err(err).Send()
-			return []byte(emptyJSON), err
-		}
-
-		if err := json.Compact(out, []byte(dev.Config.JSON)); err != nil {
 			log.Error().Err(err).Send()
 			return []byte(emptyJSON), err
 		}
