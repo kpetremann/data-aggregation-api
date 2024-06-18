@@ -19,12 +19,12 @@ const wildcard = "*"
 
 func healthCheck(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
-	fmt.Fprintf(w, `{"status": "ok"}`)
+	_, _ = fmt.Fprintf(w, `{"status": "ok"}`)
 }
 
 func getVersion(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
-	fmt.Fprintf(w, `{"version": "%s", "build_time": "%s", "build_user": "%s"}`, app.Info.Version, app.Info.BuildTime, app.Info.BuildUser)
+	_, _ = fmt.Fprintf(w, `{"version": "%s", "build_time": "%s", "build_user": "%s"}`, app.Info.Version, app.Info.BuildTime, app.Info.BuildUser)
 }
 
 func prometheusMetrics(h http.Handler) httprouter.Handle {
