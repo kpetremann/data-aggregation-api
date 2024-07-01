@@ -16,6 +16,7 @@ run:
   skip-files:
     - internal/model/openconfig/oc_path.go
     - internal/model/openconfig/oc.go
+    - internal/model/ietf/ietf.go
 
   # Invariable parameters #
 

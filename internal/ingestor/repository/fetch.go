@@ -133,6 +133,21 @@ func FetchAssets(reportCh chan report.Message) (*Assets, error) {
 		}
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if v, err := cmdb.GetSNMP(); err != nil {
+			reportCh <- report.Message{
+				Type:     report.IngestorMessage,
+				Severity: report.Warning,
+				Text:     err.Error(),
+			}
+			fetchFailure <- report.Warning
+		} else {
+			repo.CmdbSNMP = v
+		}
+	}()
+
 	// Wait for responses
 	go func() {
 		wg.Wait()

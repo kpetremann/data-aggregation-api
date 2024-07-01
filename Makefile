@@ -14,5 +14,5 @@ run:
                  -X 'github.com/criteo/data-aggregation-api/internal/version.buildTime=$(BUILDDATE)'" \
                 ./cmd/data-aggregation-api
 
-update_openconfig:
-	./update_openconfig.sh
+update_yang_models:
+	./update_yang_models.sh
