@@ -75,6 +75,7 @@ func (l *LDAPAuth) StartAuthenticationWorkers(ctx context.Context, workersCount 
 	}
 	return nil
 }
+
 func (l *LDAPAuth) AuthenticateUser(username string, password string) bool {
 	req := authRequest{
 		username: username,
