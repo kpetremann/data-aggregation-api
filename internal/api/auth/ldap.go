@@ -106,7 +106,6 @@ func (l *LDAPAuth) spawnConnectionWorker(ctx context.Context) {
 					conn, err = l.connect()
 					if err != nil {
 						log.Error().Err(err).Msg("worker LDAP reconnection failed")
-						req.authResp <- false
 						break
 					}
 				}
