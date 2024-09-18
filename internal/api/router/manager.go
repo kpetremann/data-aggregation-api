@@ -64,7 +64,8 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 	// internal endpoints
 	mux.HandleFunc("GET /metrics", prometheusMetrics(promhttp.Handler()))
 	mux.HandleFunc("GET /api/version", getVersion)
-	mux.HandleFunc("GET /api/health", healthCheck)
+	mux.HandleFunc("GET /api/health", m.healthCheck)
+	mux.HandleFunc("GET /api/ready", m.readyCheck)
 
 	api.Get("/metrics").
 		HasResponseModel(http.StatusOK, rest.ModelOf[string]()).
