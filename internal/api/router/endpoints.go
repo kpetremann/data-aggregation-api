@@ -17,11 +17,6 @@ const applicationJSON = "application/json"
 const hostnameKey = "hostname"
 const wildcard = "*"
 
-func healthCheck(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	w.Header().Set(contentType, applicationJSON)
-	_, _ = fmt.Fprintf(w, `{"status": "ok"}`)
-}
-
 func getVersion(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set(contentType, applicationJSON)
 	_, _ = fmt.Fprintf(w, `{"version": "%s", "build_time": "%s", "build_user": "%s"}`, app.Info.Version, app.Info.BuildTime, app.Info.BuildUser)
@@ -30,6 +25,16 @@ func getVersion(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 func prometheusMetrics(h http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		h.ServeHTTP(w, r)
+	}
+}
+
+func (m *Manager) healthCheck(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	w.Header().Set(contentType, applicationJSON)
+	if m.reports.HadSuccessful() {
+		_, _ = fmt.Fprintf(w, `{"status": "ok"}`)
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = fmt.Fprintf(w, `{"status": "not ready"}`)
 	}
 }
 
