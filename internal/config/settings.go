@@ -50,6 +50,11 @@ type Config struct {
 		Interval            time.Duration
 		AllDevicesMustBuild bool
 	}
+	Debug struct {
+		Pprof struct {
+			Enabled bool
+		}
+	}
 }
 
 type AuthConfig struct {
@@ -91,6 +96,8 @@ func setDefaults() {
 	viper.SetDefault("Authentication.LDAP.WorkersCount", defaultLDAPWorkersCount)
 	viper.SetDefault("Authentication.LDAP.Timeout", defaultLDAPTimeout)
 	viper.SetDefault("Authentication.LDAP.MaxConnectionLifetime", time.Minute)
+
+	viper.SetDefault("Debug.Pprof.Enabled", false)
 }
 
 func LoadConfig() error {

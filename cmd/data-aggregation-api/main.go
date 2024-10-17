@@ -85,7 +85,7 @@ func run() error {
 	triggerNewBuild := dispatchSingleRequest(newBuildRequest)
 
 	go job.StartBuildLoop(&deviceRepo, &reports, triggerNewBuild)
-	if err := router.NewManager(&deviceRepo, &reports, newBuildRequest).ListenAndServe(ctx, config.Cfg.API.ListenAddress, config.Cfg.API.ListenPort); err != nil {
+	if err := router.NewManager(&deviceRepo, &reports, newBuildRequest).ListenAndServe(ctx, config.Cfg.API.ListenAddress, config.Cfg.API.ListenPort, config.Cfg.Debug.Pprof.Enabled); err != nil {
 		return fmt.Errorf("webserver error: %w", err)
 	}
 
