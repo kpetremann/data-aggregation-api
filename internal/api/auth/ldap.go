@@ -54,7 +54,7 @@ func NewLDAPAuth(ldapURL string, bindDN string, password string, baseDN string, 
 }
 
 func SetLDAPDefaultTimeout(timeout time.Duration) {
-	ldap.DefaultTimeout = timeout //nolint:reassign  // we want to customize the default timeout
+	ldap.DefaultTimeout = timeout
 }
 
 // SetMaxConnectionLifetime sets the maximum lifetime of a connection.
