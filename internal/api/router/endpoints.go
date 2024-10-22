@@ -142,7 +142,7 @@ func (m *Manager) getDeviceConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 // getLastReport returns the last or current report.
-func (m *Manager) getLastReport(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) getLastReport(w http.ResponseWriter, _ *http.Request) {
 	out, err := m.reports.GetLastJSON()
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -155,7 +155,7 @@ func (m *Manager) getLastReport(w http.ResponseWriter, r *http.Request) {
 }
 
 // getLastCompleteReport returns the previous build report.
-func (m *Manager) getLastCompleteReport(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) getLastCompleteReport(w http.ResponseWriter, _ *http.Request) {
 	out, err := m.reports.GetLastCompleteJSON()
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -168,7 +168,7 @@ func (m *Manager) getLastCompleteReport(w http.ResponseWriter, r *http.Request) 
 }
 
 // getLastSuccessfulReport returns the previous successful build report.
-func (m *Manager) getLastSuccessfulReport(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) getLastSuccessfulReport(w http.ResponseWriter, _ *http.Request) {
 	out, err := m.reports.GetLastSuccessfulJSON()
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -183,7 +183,7 @@ func (m *Manager) getLastSuccessfulReport(w http.ResponseWriter, r *http.Request
 // triggerBuild enables the user to trigger a new build.
 //
 // It only accepts one build request at a time.
-func (m *Manager) triggerBuild(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) triggerBuild(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set(contentType, applicationJSON)
 	select {
 	case m.newBuildRequest <- struct{}{}:
