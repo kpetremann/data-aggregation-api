@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -42,7 +43,7 @@ func NewManager(deviceRepo DevicesRepository, reports *report.Repository, restar
 }
 
 // ListenAndServe starts to serve Web API requests.
-func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) error {
+func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, enablepprof bool) error {
 	defer func() {
 		close(m.newBuildRequest)
 		log.Warn().Msg("Shutdown.")
@@ -66,6 +67,16 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int) 
 	router.GET("/v1/report/last/complete", withAuth.Wrap(m.getLastCompleteReport))
 	router.GET("/v1/report/last/successful", withAuth.Wrap(m.getLastSuccessfulReport))
 	router.POST("/v1/build/trigger", withAuth.Wrap(m.triggerBuild))
+
+	if enablepprof {
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/", pprof.Index)
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/allocs", pprof.Index)
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/goroutine", pprof.Index)
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/heap", pprof.Index)
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/profile", pprof.Profile)
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/trace", pprof.Trace)
+		router.HandlerFunc(http.MethodGet, "/debug/pprof/symbol", pprof.Symbol)
+	}
 
 	listenSocket := fmt.Sprint(address, ":", port)
 	log.Info().Msgf("Start webserver - listening on %s", listenSocket)
