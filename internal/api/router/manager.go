@@ -3,10 +3,10 @@ package router
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/http/pprof"
 	"time"
 
+	"github.com/go-fuego/fuego"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 
@@ -53,38 +53,54 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 		return err
 	}
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /metrics", prometheusMetrics(promhttp.Handler()))
-	mux.HandleFunc("GET /api/version", getVersion)
-	mux.HandleFunc("GET /api/health", healthCheck)
-	mux.HandleFunc("GET /v1/devices/{hostname}/afk_enabled", withAuth.Wrap(m.getAFKEnabled))
-	mux.HandleFunc("GET /v1/devices/{hostname}/openconfig", withAuth.Wrap(m.getDeviceOpenConfig))
-	mux.HandleFunc("GET /v1/devices/{hostname}/ietfconfig", withAuth.Wrap(m.getDeviceIETFConfig))
-	mux.HandleFunc("GET /v1/devices/{hostname}/config", withAuth.Wrap(m.getDeviceConfig))
-	mux.HandleFunc("GET /v1/report/last", withAuth.Wrap(m.getLastReport))
-	mux.HandleFunc("GET /v1/report/last/complete", withAuth.Wrap(m.getLastCompleteReport))
-	mux.HandleFunc("GET /v1/report/last/successful", withAuth.Wrap(m.getLastSuccessfulReport))
-	mux.HandleFunc("POST /v1/build/trigger", withAuth.Wrap(m.triggerBuild))
-
-	if enablepprof {
-		mux.HandleFunc("GET /debug/pprof/", pprof.Index)
-		mux.HandleFunc("GET /debug/pprof/allocs", pprof.Index)
-		mux.HandleFunc("GET /debug/pprof/goroutine", pprof.Index)
-		mux.HandleFunc("GET /debug/pprof/heap", pprof.Index)
-		mux.HandleFunc("GET /debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("GET /debug/pprof/trace", pprof.Trace)
-		mux.HandleFunc("GET /debug/pprof/symbol", pprof.Symbol)
-	}
-
 	listenSocket := fmt.Sprint(address, ":", port)
-	log.Info().Msgf("Start webserver - listening on %s", listenSocket)
+	srv := fuego.NewServer(
+		fuego.WithAddr(listenSocket),
+		fuego.WithOpenAPIConfig(fuego.OpenAPIConfig{SwaggerUrl: "/docs"}),
+		fuego.WithoutStartupMessages(),
+	)
 
-	httpServer := http.Server{Addr: listenSocket, Handler: mux}
+	// / endpoints
+	fuego.GetStd(srv, "/metrics", prometheusMetrics(promhttp.Handler())).Summary("Prometheus metrics")
+
+	// /api/ endpoints
+	apiGroup := fuego.Group(srv, "/api")
+	fuego.GetStd(apiGroup, "/version", getVersion).Summary("version").Description("Details about the running version")
+	fuego.GetStd(apiGroup, "/health", healthCheck).Summary("healthcheck").Description("Dummy endpoint for basic healthcheck of the app")
+
+	// /v1/devices endpoints
+	devicesGroup := fuego.Group(srv, "/v1/devices")
+	fuego.GetStd(devicesGroup, "/{hostname}/afk_enabled", withAuth.Wrap(m.getAFKEnabled)).Summary("afk enabled").Description("Tells if a device should run AFK")
+	fuego.GetStd(devicesGroup, "/{hostname}/openconfig", withAuth.Wrap(m.getDeviceOpenConfig)).Summary("device openconfig").Description("Get OpenConfig data for one or all devices ('*' for all devices)")
+	fuego.GetStd(devicesGroup, "/{hostname}/ietfconfig", withAuth.Wrap(m.getDeviceIETFConfig)).Summary("device ietf config").Description("Get IETF data for one or all devices ('*' for all devices)")
+	fuego.GetStd(devicesGroup, "/{hostname}/config", withAuth.Wrap(m.getDeviceConfig)).Summary("device full config").Description("Returns full config (OpenConfig + IETF) for one or all devices ('*' for all devices")
+
+	// /v1/report endpoints
+	reportGroup := fuego.Group(srv, "/v1/report")
+	fuego.GetStd(reportGroup, "/last", withAuth.Wrap(m.getLastReport)).Summary("last").Description("Last or ongoing build report")
+	fuego.GetStd(reportGroup, "/last/complete", withAuth.Wrap(m.getLastCompleteReport)).Summary("Report of the last complete build (whether it failed or not)")
+	fuego.GetStd(reportGroup, "/last/successful", withAuth.Wrap(m.getLastSuccessfulReport)).Summary("Report of the last successful build")
+
+	// /v1/build endpoints
+	buildGroup := fuego.Group(srv, "/v1/build")
+	fuego.PostStd(buildGroup, "/trigger", withAuth.Wrap(m.triggerBuild)).Summary("trigger").Description("Trigger a new build, only one at a time")
+
+	// /v1/debug endpoints
+	if enablepprof {
+		debugGroup := fuego.Group(srv, "/debug").Hide()
+		fuego.GetStd(debugGroup, "/pprof/", pprof.Index)
+		fuego.GetStd(debugGroup, "/pprof/allocs", pprof.Index)
+		fuego.GetStd(debugGroup, "/pprof/goroutine", pprof.Index)
+		fuego.GetStd(debugGroup, "/pprof/heap", pprof.Index)
+		fuego.GetStd(debugGroup, "/pprof/profile", pprof.Profile)
+		fuego.GetStd(debugGroup, "/pprof/trace", pprof.Trace)
+		fuego.GetStd(debugGroup, "/pprof/symbol", pprof.Symbol)
+	}
 
 	// TODO: handle http failure! with a channel
 	go func() {
-		if err := httpServer.ListenAndServe(); err != nil {
+		log.Info().Msgf("Start webserver - listening on %s", listenSocket)
+		if err := srv.Run(); err != nil {
 			log.Error().Err(err).Msg("stopped to listen and serve")
 		}
 	}()
@@ -93,7 +109,7 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 	ctxCancel, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	if err := httpServer.Shutdown(ctxCancel); err != nil {
+	if err := srv.Shutdown(ctxCancel); err != nil {
 		log.Error().Err(err).Send()
 	}
 

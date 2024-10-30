@@ -32,3 +32,4 @@ settings.yaml
 # Build
 /.build/
 /dist/
+doc/
