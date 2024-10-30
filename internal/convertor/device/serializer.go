@@ -23,10 +23,10 @@ func (s *SafeRepository) IsAFKEnabledJSON(hostname string) ([]byte, error) {
 	}
 	if dev == nil {
 		// dev is nil when failed or no configuration
-		return json.Marshal(afkEnabledResponse{false})
+		return json.Marshal(AFKEnabledResponse{false})
 	}
 
-	return json.Marshal(afkEnabledResponse{dev.AFKEnabled})
+	return json.Marshal(AFKEnabledResponse{dev.AFKEnabled})
 }
 
 // ListAFKEnabledDevicesJSON returns all AFK enabled devices.
@@ -34,13 +34,13 @@ func (s *SafeRepository) ListAFKEnabledDevicesJSON() ([]byte, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	r := make(map[string]afkEnabledResponse, len(s.devices))
+	r := make(map[string]AFKEnabledResponse, len(s.devices))
 	for hostname, dev := range s.devices {
 		// dev is nil when failed or no configuration
 		if dev == nil {
-			r[hostname] = afkEnabledResponse{false}
+			r[hostname] = AFKEnabledResponse{false}
 		} else {
-			r[hostname] = afkEnabledResponse{dev.AFKEnabled}
+			r[hostname] = AFKEnabledResponse{dev.AFKEnabled}
 		}
 	}
 
