@@ -76,14 +76,14 @@ func (b *BasicAuth) configureLdap(ldap *LDAPAuth) error {
 func (b *BasicAuth) Wrap(next http.HandlerFunc) http.HandlerFunc {
 	switch b.mode {
 	case noAuth:
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { next(w, r) })
+		return func(w http.ResponseWriter, r *http.Request) { next(w, r) }
 	case ldapMode:
 		return BasicAuthLDAP(b.ldapAuth, next)
 	default:
-		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		return func(w http.ResponseWriter, _ *http.Request) {
 			log.Error().Str("auth-method", string(b.mode)).Str("authentication issue", "bad server configuration").Send()
 			http.Error(w, "authentication issue: bad server configuration", http.StatusInternalServerError)
-		})
+		}
 	}
 }
 
