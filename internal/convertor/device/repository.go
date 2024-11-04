@@ -9,7 +9,7 @@ type SafeRepository struct {
 	mutex   *sync.Mutex
 }
 
-type afkEnabledResponse struct {
+type AFKEnabledResponse struct {
 	AFKEnabled bool `json:"afk_enabled"`
 }
 
