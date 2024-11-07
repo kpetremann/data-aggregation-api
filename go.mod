@@ -2,6 +2,8 @@ module github.com/criteo/data-aggregation-api
 
 go 1.23
 
+replace github.com/a-h/rest => github.com/criteo-forks/rest v0.0.0-20241107141647-1c36be2f03e3
+
 require (
 	github.com/a-h/rest v0.0.0-20240504113546-6729b3328f85
 	github.com/getkin/kin-openapi v0.124.0
