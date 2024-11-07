@@ -178,6 +178,9 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 func swaggerHandler(api *rest.API) (http.Handler, error) {
 	spec, err := api.Spec()
 	if err != nil {
+		log.Warn().Err(err).Msg("API spec might not be complete")
+	}
+	if spec == nil {
 		return nil, fmt.Errorf("failed to generate OpenAPI spec: %w", err)
 	}
 
