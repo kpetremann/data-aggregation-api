@@ -150,6 +150,7 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 	if handler, err := swaggerHandler(api); err != nil {
 		panic(fmt.Sprintf("failed to bootstrap Swagger UI: %s", err)) // this should never happen
 	} else {
+		mux.Handle("GET /docs", http.RedirectHandler("/swagger-ui", http.StatusMovedPermanently))
 		mux.Handle("GET /swagger-ui", handler)
 		mux.Handle("GET /swagger-ui/", handler)
 	}
