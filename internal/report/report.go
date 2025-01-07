@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type Report struct { //nolint:govet // for JSON order
+type Report struct {
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
 

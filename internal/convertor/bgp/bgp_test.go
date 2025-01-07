@@ -165,7 +165,7 @@ func TestBGPToOpenConfig(t *testing.T) {
 		},
 		Neighbor: map[string]*openconfig.NetworkInstance_Protocol_Bgp_Neighbor{
 			"192.0.2.0": {
-				AfiSafi: map[openconfig.E_BgpTypes_AFI_SAFI_TYPE]*openconfig.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{ //nolint:exhaustive  // false positive
+				AfiSafi: map[openconfig.E_BgpTypes_AFI_SAFI_TYPE]*openconfig.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi{
 					openconfig.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST: {
 						AfiSafiName: openconfig.BgpTypes_AFI_SAFI_TYPE_IPV4_UNICAST,
 						ApplyPolicy: &openconfig.NetworkInstance_Protocol_Bgp_Neighbor_AfiSafi_ApplyPolicy{

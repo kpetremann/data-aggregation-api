@@ -21,6 +21,7 @@ import (
 )
 
 const shutdownTimeout = 5 * time.Second
+const httpReadHeaderTimeout = 60 * time.Second
 
 type DevicesRepository interface {
 	Set(devices map[string]*device.Device)
@@ -155,7 +156,7 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 	listenSocket := fmt.Sprint(address, ":", port)
 	log.Info().Msgf("start webserver - listening on %s", listenSocket)
 
-	httpServer := http.Server{Addr: listenSocket, Handler: mux}
+	httpServer := http.Server{Addr: listenSocket, Handler: mux, ReadHeaderTimeout: httpReadHeaderTimeout}
 
 	// TODO: handle http failure! with a channel
 	go func() {

@@ -25,9 +25,9 @@ func configureLogging(logLevel string, pretty bool) error {
 		return fmt.Errorf("failed to parse log level '%s': %w", logLevel, err)
 	}
 	zerolog.SetGlobalLevel(level)
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix //nolint:reassign // it is the way
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	if pretty {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr}) //nolint:reassign // it is the way
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
 	return nil

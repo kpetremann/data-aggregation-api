@@ -34,7 +34,7 @@ const (
 	OriginNone       RouteProtocolOrigin = ""
 )
 
-type RoutePolicyTerm struct { //nolint:govet // for readability
+type RoutePolicyTerm struct {
 	Sequence    int      `json:"sequence"    validate:"required"`
 	Decision    Decision `json:"decision"    validate:"required"`
 	Description string   `json:"description" validate:"omitempty"`
