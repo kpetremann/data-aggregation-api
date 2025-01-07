@@ -83,10 +83,10 @@ func (m *Manager) ListenAndServe(ctx context.Context, address string, port int, 
 	mux.HandleFunc("GET /v1/devices/{hostname}/config", withAuth.Wrap(m.getDeviceConfig))
 
 	api.Get("/v1/devices/*/afk_enabled").
-		HasResponseModel(http.StatusOK, rest.ModelOf[device.AFKEnabledResponse]()).
+		HasResponseModel(http.StatusOK, rest.ModelOf[map[string]device.AFKEnabledResponse]()).
 		HasTags([]string{"devices"}).HasDescription("Give all devices that should run AFK")
 	api.Get("/v1/devices/{hostname}/afk_enabled").
-		HasResponseModel(http.StatusOK, rest.ModelOf[map[string]device.AFKEnabledResponse]()).
+		HasResponseModel(http.StatusOK, rest.ModelOf[device.AFKEnabledResponse]()).
 		HasPathParameter("hostname", rest.PathParam{Description: "Device hostname", Type: rest.PrimitiveTypeString}).
 		HasTags([]string{"devices"}).HasDescription("Tells if a device should run AFK")
 
