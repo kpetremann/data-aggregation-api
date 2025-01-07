@@ -42,6 +42,13 @@ func (r *Repository) GetLastSuccessfulJSON() ([]byte, error) {
 	return r.lastSuccessful.ToJSON()
 }
 
+func (r *Repository) HasValidBuild() bool {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	return r.lastSuccessful != nil
+}
+
 func (r *Repository) UpdateStatus(status jobStatus) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
