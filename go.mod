@@ -1,6 +1,6 @@
 module github.com/criteo/data-aggregation-api
 
-go 1.23.4
+go 1.24.2
 
 replace github.com/a-h/rest => github.com/criteo-forks/rest v0.0.0-20241107141647-1c36be2f03e3
 
