@@ -1,6 +1,6 @@
 set -e
 
-VERSION=v2.3.0
+VERSION=v5.2.0
 
 rm -rf internal/model/openconfig/*
 rm -rf internal/model/ietf/*
