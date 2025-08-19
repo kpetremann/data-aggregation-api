@@ -12,14 +12,14 @@ import (
 )
 
 // GetNetworkInventory returns network device inventory from NetBox DCIM.
-// TODO: at the moment, to list the device we use the filter "role__n=server".
-// > This filter should be configurable by the user.
 func GetNetworkInventory() ([]*dcim.NetworkDevice, error) {
 	response := netbox.NetboxResponse[dcim.NetworkDevice]{}
 
 	params := url.Values{}
 	params.Set(string(config.Cfg.NetBox.DatacenterFilterKey), config.Cfg.Datacenter)
-	params.Set("role__n", "server")
+	for _, filter := range config.Cfg.NetBox.DeviceFilters {
+		params.Add(filter.Filter, filter.Value)
+	}
 
 	if err := netbox.Get("/api/dcim/devices/", &response, params); err != nil {
 		return nil, fmt.Errorf("network inventory fetching failure: %w", err)

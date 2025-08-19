@@ -29,6 +29,11 @@ var (
 	Cfg Config
 )
 
+type FilterKV struct {
+	Filter string
+	Value  string
+}
+
 type Config struct {
 	Authentication AuthConfig
 	NetBox         struct {
@@ -36,6 +41,7 @@ type Config struct {
 		APIKey              string
 		DatacenterFilterKey Filter
 		LimitPerPage        int
+		DeviceFilters       []FilterKV
 	}
 	Log struct {
 		Level  string
