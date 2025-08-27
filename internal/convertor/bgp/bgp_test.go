@@ -242,7 +242,7 @@ func TestBGPToOpenConfigTimersAndAggretates(t *testing.T) {
 		EcmpEnabled:                &flagTrue,
 		EcmpMaximumPaths:           &ecmpMaximumPaths64,
 		AfiSafis: []*cmdbBGP.GlobalAfiSafi{
-			&cmdbBGP.GlobalAfiSafi{
+			{
 				Name:                  cmdbBGP.IPv4Unicast,
 				Aggregates:            []cmdbBGP.Network{{Prefix: "10.0.0.0/16"}},
 				RedistributedNetworks: []cmdbBGP.Network{{Prefix: "192.2.0.0/24"}, {Prefix: "192.2.1.0/24"}},
