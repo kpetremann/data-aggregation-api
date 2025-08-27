@@ -32,7 +32,7 @@ type BasicAuth struct {
 func NewBasicAuth(ctx context.Context, cfg config.AuthConfig) (BasicAuth, error) {
 	b := BasicAuth{mode: noAuth}
 
-	if cfg.LDAP == nil {
+	if cfg.LDAP == nil || cfg.LDAP.URL == "" {
 		return b, nil
 	}
 
