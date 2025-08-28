@@ -55,6 +55,9 @@ func NeighborsToOpenconfig(hostname string, sessions []*bgp.Session) (map[string
 			AuthPassword:    &session.Password,
 			Description:     &localInfo.Description,
 		}
+		if localInfo.DelayOpenTimer > 0 {
+			neighbor.Timers = &openconfig.NetworkInstance_Protocol_Bgp_Neighbor_Timers{DelayOpenTimer: &localInfo.DelayOpenTimer}
+		}
 
 		if localInfo.PeerGroup != nil && localInfo.PeerGroup.Name != "" {
 			neighbor.PeerGroup = &localInfo.PeerGroup.Name

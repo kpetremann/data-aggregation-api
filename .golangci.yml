@@ -1,9 +1,5 @@
----
-run:
-  timeout: 15m
-
+version: "2"
 linters:
-  # additional linters:
   enable:
     - asasalint
     - asciicheck
@@ -16,8 +12,6 @@ linters:
     - gocheckcompilerdirectives
     - gocritic
     - godot
-    - gofmt
-    - goimports
     - gosec
     - grouper
     - makezero
@@ -27,7 +21,6 @@ linters:
     - prealloc
     - predeclared
     - reassign
-    - tenv
     - tparallel
     - unconvert
     - unparam
@@ -35,18 +28,38 @@ linters:
     - wastedassign
     - whitespace
     - zerologlint
-
-issues:
-  exclude: []
-  exclude-rules:
-    - path: '(.+)_test\.go'
-      linters:
-        - goconst
-    - path: '(.+)_test\.go'
-      linters:
-        - govet
-      text: 'fieldalignment: .*'
-  exclude-files:
-    - internal/model/openconfig/oc_path.go
-    - internal/model/openconfig/oc.go
-    - internal/model/ietf/ietf.go
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+      - linters:
+          - govet
+        path: (.+)_test\.go
+        text: 'fieldalignment: .*'
+    paths:
+      - internal/model/openconfig/oc_path.go
+      - internal/model/openconfig/oc.go
+      - internal/model/ietf/ietf.go
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - internal/model/openconfig/oc_path.go
+      - internal/model/openconfig/oc.go
+      - internal/model/ietf/ietf.go
+      - third_party$
+      - builtin$
+      - examples$
