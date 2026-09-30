@@ -7,10 +7,12 @@ import (
 	"sync"
 
 	bgpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/bgp"
+	ntpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/ntp"
 	rpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/routingpolicy"
 	snmpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/snmp"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
+	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
 	"github.com/criteo/data-aggregation-api/internal/model/dcim"
@@ -37,6 +39,7 @@ type Device struct {
 	Config          *GeneratedConfig
 	BGPGlobalConfig *bgp.BGPGlobal
 	SNMP            *snmp.SNMP
+	NTP             *ntp.NTP
 	Sessions        []*bgp.Session
 	PeerGroups      []*bgp.PeerGroup
 	PrefixLists     []*routingpolicy.PrefixList
@@ -102,6 +105,12 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 	if !ok {
 		log.Warn().Msgf("no snmp found for %s", dcimInfo.Hostname)
 	}
+
+	device.NTP, ok = devicesData.NTP[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no ntp found for %s", dcimInfo.Hostname)
+	}
+
 	return device, nil
 }
 
@@ -138,6 +147,9 @@ func (d *Device) Generateconfigs() error {
 					},
 				},
 			},
+		},
+		System: &openconfig.System{
+			Ntp: ntpconvertors.NTPToOpenconfig(d.NTP),
 		},
 	}
 

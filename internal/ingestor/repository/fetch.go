@@ -132,6 +132,19 @@ func FetchAssets(reportCh chan report.Message) (*Assets, error) {
 		}
 	})
 
+	wg.Go(func() {
+		if v, err := cmdb.GetNTP(); err != nil {
+			reportCh <- report.Message{
+				Type:     report.IngestorMessage,
+				Severity: report.Warning,
+				Text:     err.Error(),
+			}
+			fetchFailure <- report.Warning
+		} else {
+			repo.CmdbNTP = v
+		}
+	})
+
 	// Wait for responses
 	go func() {
 		wg.Wait()

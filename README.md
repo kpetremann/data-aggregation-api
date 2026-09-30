@@ -23,16 +23,18 @@ You need to update the following part in the code:
    - PrecomputeBGPGlobal()
 
 2. register your ingestor in `internal/ingestors/repository.go`:
-   - DataPerDevice struct
-   - IngestorRepository struct
-   - FetchAll()
+   - AssetsPerDevice struct
+   - Assets struct
+
+3. in `internal/ingestors/fetch.go`:
+   - FetchAssets()
    - Precompute()
 
-3. store the preprocessed ingestor data into `internal/convertors/device/device.go`:
+4. store the preprocessed ingestor data into `internal/convertors/device/device.go`:
    - Device struct
    - NewDevice()
 
-4. add your convertor in `internal/convertors/...`
+5. add your convertor in `internal/convertors/...`
 
-3. execute your convertor (`internal/convertors/device/device.go`):
+6. execute your convertor (`internal/convertors/device/device.go`):
    - Generateconfigs()
