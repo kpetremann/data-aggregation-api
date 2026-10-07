@@ -26,11 +26,10 @@ func SNMPtoIETFsnmp(snmp *snmp.SNMP) ietf.IETFSnmp_Snmp {
 		Community: make(map[string]*ietf.IETFSnmp_Snmp_Community),
 	}
 	for _, community := range snmp.CommunityList {
-		communitynew := community // create a new variable to avoid assigning the address of the range-loop variable
 		snmpcommunity := ietf.IETFSnmp_Snmp_Community{
-			Index:        &communitynew.Name,
-			SecurityName: &communitynew.Type,
-			TextName:     &communitynew.Community,
+			Index:        &community.Name,
+			SecurityName: &community.Type,
+			TextName:     &community.Community,
 		}
 		IETFsnmp.Community[community.Name] = &snmpcommunity
 	}
