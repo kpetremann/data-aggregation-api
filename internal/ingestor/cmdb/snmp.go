@@ -28,10 +28,10 @@ func GetSNMP() ([]*snmp.SNMP, error) {
 
 // PrecomputeSNMP associates each found Snmp configuration to the matching devices.
 func PrecomputeSNMP(globalConfigs []*snmp.SNMP) map[string]*snmp.SNMP {
-	var SNMPPerDevice = make(map[string]*snmp.SNMP)
+	var snmpPerDevice = make(map[string]*snmp.SNMP)
 	for _, config := range globalConfigs {
-		SNMPPerDevice[config.Device.Name] = config
+		snmpPerDevice[config.Device.Name] = config
 	}
 
-	return SNMPPerDevice
+	return snmpPerDevice
 }

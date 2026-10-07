@@ -14,7 +14,7 @@ func GetNTP() ([]*ntp.NTP, error) {
 	response := netbox.NetboxResponse[ntp.NTP]{}
 	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/NTP/", &response, params)
+	err := netbox.Get("/api/plugins/cmdb/ntp/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("NTP fetching failure: %w", err)
 	}
@@ -27,11 +27,11 @@ func GetNTP() ([]*ntp.NTP, error) {
 }
 
 // PrecomputeNTP associates each found NTP configuration to the matching devices.
-func PrecomputeNTP(config []*ntp.NTP) map[string]*ntp.NTP {
-	var NTPPerDevice = make(map[string]*ntp.NTP)
-	for _, config := range config {
-		NTPPerDevice[config.Device.Name] = config
+func PrecomputeNTP(configs []*ntp.NTP) map[string]*ntp.NTP {
+	var ntpPerDevice = make(map[string]*ntp.NTP)
+	for _, config := range configs {
+		ntpPerDevice[config.Device.Name] = config
 	}
 
-	return NTPPerDevice
+	return ntpPerDevice
 }
