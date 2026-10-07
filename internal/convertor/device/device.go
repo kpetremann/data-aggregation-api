@@ -11,12 +11,14 @@ import (
 	rpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/routingpolicy"
 	snmpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/snmp"
 	syslogconvertors "github.com/criteo/data-aggregation-api/internal/convertor/syslog"
+	tacacsconvertors "github.com/criteo/data-aggregation-api/internal/convertor/tacacs"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/syslog"
+	"github.com/criteo/data-aggregation-api/internal/model/cmdb/tacacs"
 	"github.com/criteo/data-aggregation-api/internal/model/dcim"
 	"github.com/criteo/data-aggregation-api/internal/model/ietf"
 	"github.com/criteo/data-aggregation-api/internal/model/openconfig"
@@ -43,6 +45,7 @@ type Device struct {
 	SNMP            *snmp.SNMP
 	NTP             *ntp.NTP
 	Syslog          *syslog.Syslog
+	Tacacs          *tacacs.Tacacs
 	Sessions        []*bgp.Session
 	PeerGroups      []*bgp.PeerGroup
 	PrefixLists     []*routingpolicy.PrefixList
@@ -119,6 +122,11 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		log.Warn().Msgf("no syslog found for %s", dcimInfo.Hostname)
 	}
 
+	device.Tacacs, ok = devicesData.Tacacs[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no tacacs found for %s", dcimInfo.Hostname)
+	}
+
 	return device, nil
 }
 
@@ -160,6 +168,19 @@ func (d *Device) Generateconfigs() error {
 			Ntp:     ntpconvertors.NTPToOpenconfig(d.NTP),
 			Logging: syslogconvertors.SyslogToOpenconfig(d.Syslog),
 		},
+	}
+
+	if d.Tacacs == nil {
+		log.Warn().Msgf("%s don't have a Tacacs configuration, skip it in OpenconfigConfig", d.Dcim.Hostname)
+	} else {
+		aaa, err := tacacsconvertors.TacacsToOpenConfigAAA(d.Tacacs)
+		if err != nil {
+			return fmt.Errorf("convert from TACACS to OpenConfig failed: %w", err)
+		}
+
+		if aaa != nil {
+			config.System.Aaa = aaa
+		}
 	}
 
 	devJSON, err := ygot.EmitJSON(
@@ -205,6 +226,7 @@ func (d *Device) Generateconfigs() error {
 			return fmt.Errorf("failed to transform an ietf device specification (%s) into JSON using ygot: %w", d.Dcim.Hostname, err)
 		}
 	}
+
 	return nil
 }
 
