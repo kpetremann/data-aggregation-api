@@ -9,6 +9,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// snmpConfig is an SNMP configuration as Netbox returns it, Device being an anonymous struct.
+func snmpConfig(hostname, location, contact string, communities ...snmp.Community) *snmp.SNMP {
+	config := &snmp.SNMP{Location: location, Contact: contact, CommunityList: communities}
+	config.Device.Name = hostname
+	return config
+}
+
 func TestPrecomputeSNMP(t *testing.T) {
 	tests := []struct {
 		name string
@@ -41,25 +48,10 @@ func TestPrecomputeSNMP(t *testing.T) {
          }
       ]`,
 			want: map[string]*snmp.SNMP{
-				"tor01-01": {
-					Device: struct {
-						Name string "json:\"name\" validate:\"required\""
-					}{
-						Name: "tor01-01",
-					},
-					CommunityList: []snmp.Community{
-						{
-							Community: "my_community_read",
-							Type:      "readonly",
-						},
-						{
-							Community: "my_community_write",
-							Type:      "readwrite",
-						},
-					},
-					Location: "location1",
-					Contact:  "best team",
-				},
+				"tor01-01": snmpConfig("tor01-01", "location1", "best team",
+					snmp.Community{Community: "my_community_read", Type: "readonly"},
+					snmp.Community{Community: "my_community_write", Type: "readwrite"},
+				),
 			},
 		},
 	}
