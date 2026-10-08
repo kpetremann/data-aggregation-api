@@ -52,6 +52,11 @@ type Device struct {
 	CommunityLists  []*routingpolicy.CommunityList
 	RoutePolicies   []*routingpolicy.RoutePolicy
 	AFKEnabled      bool
+
+	// Hwsku and SONiCType are DEVICE_METADATA's hwsku and type, empty when
+	// the device's model or role is not mapped.
+	Hwsku     string
+	SONiCType string
 }
 
 // isAFKenabled checks if the device contains the AFKEnabledTag.
@@ -127,6 +132,16 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		log.Warn().Msgf("no tacacs found for %s", dcimInfo.Hostname)
 	}
 
+	device.Hwsku, ok = devicesData.SONiCHwsku[dcimInfo.DeviceType.ID]
+	if !ok {
+		log.Warn().Msgf("no SONiC HwSKU mapped to the device type %q of %s", dcimInfo.DeviceType.Model, dcimInfo.Hostname)
+	}
+
+	device.SONiCType, ok = devicesData.SONiCType[dcimInfo.DeviceRole.ID]
+	if !ok {
+		log.Warn().Msgf("no SONiC type mapped to the device role %q of %s", dcimInfo.DeviceRole.Name, dcimInfo.Hostname)
+	}
+
 	return device, nil
 }
 
@@ -165,8 +180,11 @@ func (d *Device) Generateconfigs() error {
 			},
 		},
 		System: &openconfig.System{
-			Ntp:     ntpconvertors.NTPToOpenconfig(d.NTP),
-			Logging: syslogconvertors.SyslogToOpenconfig(d.Syslog),
+			Hostname: optional(d.Dcim.Hostname),
+			Hwsku:    optional(d.Hwsku),
+			Type:     optional(d.SONiCType),
+			Ntp:      ntpconvertors.NTPToOpenconfig(d.NTP),
+			Logging:  syslogconvertors.SyslogToOpenconfig(d.Syslog),
 		},
 	}
 
@@ -228,6 +246,15 @@ func (d *Device) Generateconfigs() error {
 	}
 
 	return nil
+}
+
+// optional returns a pointer to s, or nil when s is empty so that the leaf is
+// left out rather than emitted empty.
+func optional(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // GetCompactOpenconfigJSON returns OpenConfig result in not indented JSON format.
