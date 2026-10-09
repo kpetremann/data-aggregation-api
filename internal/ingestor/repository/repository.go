@@ -10,6 +10,7 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
+	"github.com/criteo/data-aggregation-api/internal/model/cmdb/syslog"
 	"github.com/criteo/data-aggregation-api/internal/model/dcim"
 	"github.com/criteo/data-aggregation-api/internal/report"
 )
@@ -31,6 +32,7 @@ type AssetsPerDevice struct {
 	RoutePolicies  map[string][]*routingpolicy.RoutePolicy
 	SNMP           map[string]*snmp.SNMP
 	NTP            map[string]*ntp.NTP
+	Syslog         map[string]*syslog.Syslog
 }
 
 type Assets struct {
@@ -43,6 +45,7 @@ type Assets struct {
 	CmdbCommunityLists []*routingpolicy.CommunityList
 	CmdbSNMP           []*snmp.SNMP
 	CmdbNTP            []*ntp.NTP
+	CmdbSyslog         []*syslog.Syslog
 }
 
 func (i *Assets) Precompute() *AssetsPerDevice {
@@ -55,6 +58,7 @@ func (i *Assets) Precompute() *AssetsPerDevice {
 	precomputed.RoutePolicies = cmdb.PrecomputeRoutePolicies(i.CmdbRoutePolicies)
 	precomputed.SNMP = cmdb.PrecomputeSNMP(i.CmdbSNMP)
 	precomputed.NTP = cmdb.PrecomputeNTP(i.CmdbNTP)
+	precomputed.Syslog = cmdb.PrecomputeSyslog(i.CmdbSyslog)
 	return &precomputed
 }
 
@@ -69,6 +73,7 @@ func (i *Assets) getStats() map[string]int {
 		"communityLists": len(i.CmdbCommunityLists),
 		"SNMP":           len(i.CmdbSNMP),
 		"NTP":            len(i.CmdbNTP),
+		"syslog":         len(i.CmdbSyslog),
 	}
 }
 

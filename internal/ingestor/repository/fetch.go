@@ -145,6 +145,19 @@ func FetchAssets(reportCh chan report.Message) (*Assets, error) {
 		}
 	})
 
+	wg.Go(func() {
+		if v, err := cmdb.GetSyslog(); err != nil {
+			reportCh <- report.Message{
+				Type:     report.IngestorMessage,
+				Severity: report.Warning,
+				Text:     err.Error(),
+			}
+			fetchFailure <- report.Warning
+		} else {
+			repo.CmdbSyslog = v
+		}
+	})
+
 	// Wait for responses
 	go func() {
 		wg.Wait()
