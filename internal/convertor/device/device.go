@@ -162,6 +162,11 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("convert from Routing Policy to OpenConfig failed: %w", err)
 	}
 
+	aaaConfig, err := tacacsconvertors.TacacsToOpenConfigAAA(d.Tacacs)
+	if err != nil {
+		return fmt.Errorf("convert from TACACS to OpenConfig failed: %w", err)
+	}
+
 	// Assemble global configuration
 	bgpKey := openconfig.NetworkInstance_Protocol_Key{Identifier: openconfig.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, Name: "bgp"}
 
@@ -183,22 +188,10 @@ func (d *Device) Generateconfigs() error {
 			Hostname: optional(d.Dcim.Hostname),
 			Hwsku:    optional(d.Hwsku),
 			Type:     optional(d.SONiCType),
+			Aaa:      aaaConfig,
 			Ntp:      ntpconvertors.NTPToOpenconfig(d.NTP),
 			Logging:  syslogconvertors.SyslogToOpenconfig(d.Syslog),
 		},
-	}
-
-	if d.Tacacs == nil {
-		log.Warn().Msgf("%s don't have a Tacacs configuration, skip it in OpenconfigConfig", d.Dcim.Hostname)
-	} else {
-		aaa, err := tacacsconvertors.TacacsToOpenConfigAAA(d.Tacacs)
-		if err != nil {
-			return fmt.Errorf("convert from TACACS to OpenConfig failed: %w", err)
-		}
-
-		if aaa != nil {
-			config.System.Aaa = aaa
-		}
 	}
 
 	devJSON, err := ygot.EmitJSON(
@@ -214,6 +207,7 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("failed to transform an openconfig device specification (%s) into JSON using ygot: %w", d.Dcim.Hostname, err)
 	}
 
+	// IETF configuration
 	d.Config = &GeneratedConfig{
 		Openconfig:     &config,
 		JSONOpenConfig: devJSON,
