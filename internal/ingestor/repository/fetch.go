@@ -9,7 +9,7 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/report"
 )
 
-const ingestorNumber = 7
+const ingestorNumber = 10
 
 // FetchAssets get data from all ingestors.
 func FetchAssets(reportCh chan report.Message) (*Assets, error) {
@@ -155,6 +155,20 @@ func FetchAssets(reportCh chan report.Message) (*Assets, error) {
 			fetchFailure <- report.Warning
 		} else {
 			repo.CmdbSyslog = v
+		}
+	})
+
+	// TACACS
+	wg.Go(func() {
+		if v, err := cmdb.GetTacacs(); err != nil {
+			reportCh <- report.Message{
+				Type:     report.IngestorMessage,
+				Severity: report.Warning,
+				Text:     err.Error(),
+			}
+			fetchFailure <- report.Warning
+		} else {
+			repo.CmdbTacacs = v
 		}
 	})
 

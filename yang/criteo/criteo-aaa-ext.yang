@@ -1,0 +1,67 @@
+module criteo-aaa-ext {
+
+  yang-version "1";
+
+  namespace "http://criteo.com/yang/criteo-aaa-ext";
+
+  prefix "criteo-aaa-ext";
+
+  import openconfig-system { prefix oc-sys; }
+  import openconfig-extensions { prefix oc-ext; }
+
+  organization
+    "Criteo";
+
+  contact
+    "Criteo Network Team";
+
+  description
+    "This module adds the AAA server leaves Criteo needs but which
+    OpenConfig does not model:
+
+      - priority, on AAA servers (e.g. TACACS+ servers)
+    ";
+
+  oc-ext:openconfig-version "0.1.0";
+
+  revision "2026-09-28" {
+    description
+      "Initial revision, replacing the ietf-system-tacacs-plus based
+      modeling of TACACS+.";
+    reference "0.1.0";
+  }
+
+  // ---------------------------------------------------------------------
+  // Augments - AAA server priority
+  // ---------------------------------------------------------------------
+
+  augment "/oc-sys:system/oc-sys:aaa/oc-sys:server-groups/" +
+          "oc-sys:server-group/oc-sys:servers/oc-sys:server/" +
+          "oc-sys:config" {
+    description
+      "Preference of an AAA server. OpenConfig's servers list has no
+      ordering or priority leaf of its own, while the CMDB carries an
+      explicit priority per server.";
+
+    leaf priority {
+      type uint32;
+      description
+        "The server with the highest priority is the preferred one.";
+    }
+  }
+
+  augment "/oc-sys:system/oc-sys:aaa/oc-sys:server-groups/" +
+          "oc-sys:server-group/oc-sys:servers/oc-sys:server/" +
+          "oc-sys:state" {
+    description
+      "Preference of an AAA server. OpenConfig's servers list has no
+      ordering or priority leaf of its own, while the CMDB carries an
+      explicit priority per server.";
+
+    leaf priority {
+      type uint32;
+      description
+        "The server with the highest priority is the preferred one.";
+    }
+  }
+}
