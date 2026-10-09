@@ -128,12 +128,12 @@ func TestNewDevice_UnmappedIsOptional(t *testing.T) {
 	}
 }
 
-// generateSystem runs Generateconfigs on a device holding only the system
+// generateSystem runs Generateconfigs on tor01-01 holding only the system
 // data and returns the emitted JSON.
-func generateSystem(hostname, hwsku, sonicType string, ntpConfig *ntp.NTP) (string, error) {
+func generateSystem(hwsku, sonicType string, ntpConfig *ntp.NTP) (string, error) {
 	d := &Device{
 		mutex:           &sync.Mutex{},
-		Dcim:            &dcim.NetworkDevice{Hostname: hostname},
+		Dcim:            &dcim.NetworkDevice{Hostname: "tor01-01"},
 		BGPGlobalConfig: &bgp.BGPGlobal{},
 		NTP:             ntpConfig,
 		Hwsku:           hwsku,
@@ -163,7 +163,7 @@ func systemConfig(t *testing.T, raw string) map[string]any {
 // augmented leaves are emitted under system/config with bare names, next to
 // hostname.
 func TestGenerateconfigsDeviceMetadata(t *testing.T) {
-	raw, err := generateSystem("tor01-01", "ACS-MSN2700", "ToRRouter", nil)
+	raw, err := generateSystem("ACS-MSN2700", "ToRRouter", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestGenerateconfigsDeviceMetadata(t *testing.T) {
 // TestGenerateconfigsDeviceMetadata_Unmapped: a device without mappings still
 // gets its hostname, and no empty hwsku or type.
 func TestGenerateconfigsDeviceMetadata_Unmapped(t *testing.T) {
-	raw, err := generateSystem("tor01-01", "", "", nil)
+	raw, err := generateSystem("", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestGenerateconfigsDeviceMetadata_Unmapped(t *testing.T) {
 // enforced, so a type afk-node does not support never reaches it.
 func TestGenerateconfigsDeviceMetadata_TypeOutsideThePattern(t *testing.T) {
 	for _, sonicType := range []string{"BackEndToRRouter", "not-provisioned"} {
-		if _, err := generateSystem("tor01-01", "ACS-MSN2700", sonicType, nil); err == nil {
+		if _, err := generateSystem("ACS-MSN2700", sonicType, nil); err == nil {
 			t.Errorf("type %q was emitted, want a validation error", sonicType)
 		}
 	}
@@ -205,7 +205,7 @@ func TestGenerateconfigsNTP(t *testing.T) {
 		{Name: "ntp1", ServerAddress: "192.0.2.1"},
 		{Name: "ntp2", ServerAddress: "192.0.2.2"},
 	}}
-	raw, err := generateSystem("tor01-01", "ACS-MSN2700", "ToRRouter", config)
+	raw, err := generateSystem("ACS-MSN2700", "ToRRouter", config)
 	if err != nil {
 		t.Fatal(err)
 	}
