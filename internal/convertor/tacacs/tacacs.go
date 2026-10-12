@@ -17,17 +17,12 @@ const tacacsServerGroupName = "TACACS+"
 // TacacsToOpenConfigAAA converts a CMDB TACACS configuration into the aaa
 // container of openconfig-system, under a single TACACS+ server group.
 //
-// It returns nil when there is no server to advertise: the CMDB holds a
-// single passkey for the whole device, and the model has no place for it
-// outside of a server entry.
+// It returns nil when there is no server to advertise.
 //
 // OpenConfig's server list has no ordering or priority leaf of its own, so
 // the CMDB priority is carried by the criteo-aaa-ext priority leaf instead of
 // the position in the list. Servers are still appended by descending
 // priority, ties broken on the address, to keep the emitted JSON stable.
-//
-// The CMDB holds one passkey per device where the model has one shared
-// secret per server, so it is set on each of them.
 func TacacsToOpenConfigAAA(config *tacacs.Tacacs) (*openconfig.System_Aaa, error) {
 	if config == nil || len(config.ServerList) == 0 {
 		return nil, nil
@@ -59,13 +54,13 @@ func TacacsToOpenConfigAAA(config *tacacs.Tacacs) (*openconfig.System_Aaa, error
 			entry.Priority = ygot.Uint32(server.Priority)
 		}
 
-		if server.TCPPort != 0 || config.Passkey != "" {
+		if server.TCPPort != 0 || server.Passkey != "" {
 			entry.Tacacs = &openconfig.System_Aaa_ServerGroup_Server_Tacacs{}
 			if server.TCPPort != 0 {
 				entry.Tacacs.Port = ygot.Uint16(server.TCPPort)
 			}
-			if config.Passkey != "" {
-				entry.Tacacs.SecretKey = ygot.String(config.Passkey)
+			if server.Passkey != "" {
+				entry.Tacacs.SecretKey = ygot.String(server.Passkey)
 			}
 		}
 	}
