@@ -43,9 +43,8 @@ func TestTacacsToOpenConfigAAA(t *testing.T) {
 		{
 			name: "one server",
 			args: &tacacs.Tacacs{
-				Passkey: "Mypasword1",
 				ServerList: []tacacs.Server{
-					{ServerAddress: "1.1.1.1", Priority: 1, TCPPort: 49},
+					{ServerAddress: "1.1.1.1", Priority: 1, TCPPort: 49, Passkey: "Mypasword1"},
 				},
 			},
 			want: map[string]uint32{"1.1.1.1": 1},
@@ -53,11 +52,10 @@ func TestTacacsToOpenConfigAAA(t *testing.T) {
 		{
 			name: "several servers, each keeps its own priority",
 			args: &tacacs.Tacacs{
-				Passkey: "Mypasword1",
 				ServerList: []tacacs.Server{
-					{ServerAddress: "1.1.1.3", Priority: 1, TCPPort: 49},
-					{ServerAddress: "1.1.1.1", Priority: 3, TCPPort: 49},
-					{ServerAddress: "1.1.1.2", Priority: 2, TCPPort: 4949},
+					{ServerAddress: "1.1.1.3", Priority: 1, TCPPort: 49, Passkey: "Mypasword1"},
+					{ServerAddress: "1.1.1.1", Priority: 3, TCPPort: 49, Passkey: "Mypasword1"},
+					{ServerAddress: "1.1.1.2", Priority: 2, TCPPort: 4949, Passkey: "Mypasword1"},
 				},
 			},
 			want: map[string]uint32{"1.1.1.3": 1, "1.1.1.1": 3, "1.1.1.2": 2},
@@ -91,14 +89,13 @@ func TestTacacsToOpenConfigAAA(t *testing.T) {
 func TestTacacsToOpenConfigAAAJSON(t *testing.T) {
 	want := `{"system":{"aaa":{"server-groups":{"server-group":[{"config":{"name":"TACACS+","type":"TACACS"},"name":"TACACS+","servers":{"server":[` +
 		`{"address":"1.1.1.1","config":{"address":"1.1.1.1","priority":2},"tacacs":{"config":{"port":49,"secret-key":"Mypasword1"}}},` +
-		`{"address":"1.1.1.2","config":{"address":"1.1.1.2","priority":1},"tacacs":{"config":{"port":4949,"secret-key":"Mypasword1"}}}` +
+		`{"address":"1.1.1.2","config":{"address":"1.1.1.2","priority":1},"tacacs":{"config":{"port":4949,"secret-key":"Mypasword2"}}}` +
 		`]}}]}}}}`
 
 	config := &tacacs.Tacacs{
-		Passkey: "Mypasword1",
 		ServerList: []tacacs.Server{
-			{ServerAddress: "1.1.1.2", Priority: 1, TCPPort: 4949},
-			{ServerAddress: "1.1.1.1", Priority: 2, TCPPort: 49},
+			{ServerAddress: "1.1.1.2", Priority: 1, TCPPort: 4949, Passkey: "Mypasword2"},
+			{ServerAddress: "1.1.1.1", Priority: 2, TCPPort: 49, Passkey: "Mypasword1"},
 		},
 	}
 
@@ -131,13 +128,11 @@ func TestTacacsToOpenConfigAAADefaults(t *testing.T) {
 	}
 }
 
-// TestTacacsToOpenConfigAAANoServer checks nothing is generated without a server:
-// the passkey alone has no place in the model.
+// TestTacacsToOpenConfigAAANoServer checks nothing is generated without a server.
 func TestTacacsToOpenConfigAAANoServer(t *testing.T) {
 	tests := map[string]*tacacs.Tacacs{
 		"no configuration at all": nil,
 		"empty configuration":     {},
-		"passkey but no server":   {Passkey: "Mypasword1"},
 	}
 
 	for name, config := range tests {

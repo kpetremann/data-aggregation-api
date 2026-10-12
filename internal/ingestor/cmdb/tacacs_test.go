@@ -24,19 +24,20 @@ func TestPrecomputeTacacs(t *testing.T) {
                "id":1,
                "name":"tor01-01"
             },
-            "passkey":"Mypasword1",
             "server_list":[
                {
                   "id":1,
                   "server_address":"1.1.1.1",
                   "priority":1,
-                  "tcp_port":49
+                  "tcp_port":49,
+                  "passkey":"Mypasword1"
                },
                {
                   "id":2,
                   "server_address":"1.1.1.2",
                   "priority":2,
-                  "tcp_port":4949
+                  "tcp_port":4949,
+                  "passkey":"Mypasword2"
                }
             ],
             "created":"2026-08-10T07:37:29.238195Z",
@@ -50,17 +51,18 @@ func TestPrecomputeTacacs(t *testing.T) {
 					}{
 						Name: "tor01-01",
 					},
-					Passkey: "Mypasword1",
 					ServerList: []tacacs.Server{
 						{
 							ServerAddress: "1.1.1.1",
 							Priority:      1,
 							TCPPort:       49,
+							Passkey:       "Mypasword1",
 						},
 						{
 							ServerAddress: "1.1.1.2",
 							Priority:      2,
 							TCPPort:       4949,
+							Passkey:       "Mypasword2",
 						},
 					},
 				},

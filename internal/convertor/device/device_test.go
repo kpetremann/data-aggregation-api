@@ -28,7 +28,7 @@ func TestGenerateconfigsSystem(t *testing.T) {
 		{
 			name:     "NTP and TACACS+",
 			ntp:      &ntp.NTP{ServerList: []ntp.Server{{Name: "ntp1", ServerAddress: "10.0.0.1"}}},
-			tacacs:   &tacacs.Tacacs{Passkey: "secret", ServerList: []tacacs.Server{{ServerAddress: "10.10.10.10", Priority: 1, TCPPort: 49}}},
+			tacacs:   &tacacs.Tacacs{ServerList: []tacacs.Server{{ServerAddress: "10.10.10.10", Priority: 1, TCPPort: 49, Passkey: "secret"}}},
 			wantKeys: []string{"aaa", "config", "ntp"},
 		},
 		{
