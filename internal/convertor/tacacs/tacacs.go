@@ -16,6 +16,7 @@ const tacacsServerGroupName = "TACACS+"
 
 // TacacsToOpenConfigAAA converts a CMDB TACACS configuration into the aaa
 // container of openconfig-system, under a single TACACS+ server group.
+// Logins try the TACACS+ servers first, then the local accounts.
 //
 // It returns nil when there is no server to advertise.
 //
@@ -37,7 +38,14 @@ func TacacsToOpenConfigAAA(config *tacacs.Tacacs) (*openconfig.System_Aaa, error
 		return servers[i].ServerAddress < servers[j].ServerAddress
 	})
 
-	aaa := &openconfig.System_Aaa{}
+	aaa := &openconfig.System_Aaa{
+		Authentication: &openconfig.System_Aaa_Authentication{
+			AuthenticationMethod: []openconfig.System_Aaa_Authentication_AuthenticationMethod_Union{
+				openconfig.AaaTypes_AAA_METHOD_TYPE_TACACS_ALL,
+				openconfig.AaaTypes_AAA_METHOD_TYPE_LOCAL,
+			},
+		},
+	}
 	serverGroup, err := aaa.NewServerGroup(tacacsServerGroupName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the TACACS+ server group: %w", err)
