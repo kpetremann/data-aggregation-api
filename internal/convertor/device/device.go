@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	bgpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/bgp"
+	dhcprelayconvertors "github.com/criteo/data-aggregation-api/internal/convertor/dhcprelay"
 	ntpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/ntp"
 	rpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/routingpolicy"
 	snmpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/snmp"
@@ -14,6 +15,7 @@ import (
 	tacacsconvertors "github.com/criteo/data-aggregation-api/internal/convertor/tacacs"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
+	"github.com/criteo/data-aggregation-api/internal/model/cmdb/dhcprelay"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
@@ -46,6 +48,7 @@ type Device struct {
 	NTP             *ntp.NTP
 	Syslog          *syslog.Syslog
 	Tacacs          *tacacs.Tacacs
+	DHCPRelays      []*dhcprelay.Relay
 	Sessions        []*bgp.Session
 	PeerGroups      []*bgp.PeerGroup
 	PrefixLists     []*routingpolicy.PrefixList
@@ -132,6 +135,11 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		log.Warn().Msgf("no tacacs found for %s", dcimInfo.Hostname)
 	}
 
+	device.DHCPRelays, ok = devicesData.DHCPRelays[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no dhcp relay found for %s", dcimInfo.Hostname)
+	}
+
 	device.Hwsku, ok = devicesData.SONiCHwsku[dcimInfo.DeviceType.ID]
 	if !ok {
 		log.Warn().Msgf("no SONiC HwSKU mapped to the device type %q of %s", dcimInfo.DeviceType.Model, dcimInfo.Hostname)
@@ -167,11 +175,17 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("convert from TACACS to OpenConfig failed: %w", err)
 	}
 
+	relayAgentConfig, err := dhcprelayconvertors.DHCPRelayToOpenConfig(d.DHCPRelays)
+	if err != nil {
+		return fmt.Errorf("convert from DHCP relay to OpenConfig failed: %w", err)
+	}
+
 	// Assemble global configuration
 	bgpKey := openconfig.NetworkInstance_Protocol_Key{Identifier: openconfig.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, Name: "bgp"}
 
 	config := openconfig.Device{
 		RoutingPolicy: routingPolicyConfig,
+		RelayAgent:    relayAgentConfig,
 		NetworkInstance: map[string]*openconfig.NetworkInstance{
 			"default": {
 				Name: &defaultInstance,

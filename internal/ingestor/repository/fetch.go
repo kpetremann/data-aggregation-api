@@ -172,6 +172,20 @@ func FetchAssets(reportCh chan report.Message) (*Assets, error) {
 		}
 	})
 
+	// DHCP relay
+	wg.Go(func() {
+		if v, err := cmdb.GetDHCPRelays(); err != nil {
+			reportCh <- report.Message{
+				Type:     report.IngestorMessage,
+				Severity: report.Warning,
+				Text:     err.Error(),
+			}
+			fetchFailure <- report.Warning
+		} else {
+			repo.CmdbDHCPRelays = v
+		}
+	})
+
 	// SONiC mappings, for DEVICE_METADATA
 	wg.Go(func() {
 		if v, err := cmdb.GetSONiCHwskuMappings(); err != nil {

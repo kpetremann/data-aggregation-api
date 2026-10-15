@@ -47,6 +47,7 @@ $GENERATOR -path=public -output_file=openconfig/oc.go \
   public/release/models/policy/openconfig-routing-policy.yang \
   public/release/models/bgp/openconfig-bgp-policy.yang \
   public/release/models/system/openconfig-system.yang \
+  public/release/models/relay-agent/openconfig-relay-agent.yang \
   public/release/models/criteo-aaa-ext.yang \
   public/release/models/criteo-bgp-ext.yang \
   public/release/models/criteo-system-ext.yang \
