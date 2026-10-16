@@ -87,7 +87,7 @@ func TestTacacsToOpenConfigAAA(t *testing.T) {
 
 // TestTacacsToOpenConfigAAAJSON checks the rendered RFC7951 JSON of a full configuration.
 func TestTacacsToOpenConfigAAAJSON(t *testing.T) {
-	want := `{"system":{"aaa":{"server-groups":{"server-group":[{"config":{"name":"TACACS+","type":"TACACS"},"name":"TACACS+","servers":{"server":[` +
+	want := `{"system":{"aaa":{"authentication":{"config":{"authentication-method":["TACACS_ALL","LOCAL"]}},"server-groups":{"server-group":[{"config":{"name":"TACACS+","type":"TACACS"},"name":"TACACS+","servers":{"server":[` +
 		`{"address":"1.1.1.1","config":{"address":"1.1.1.1","priority":2},"tacacs":{"config":{"port":49,"secret-key":"Mypasword1"}}},` +
 		`{"address":"1.1.1.2","config":{"address":"1.1.1.2","priority":1},"tacacs":{"config":{"port":4949,"secret-key":"Mypasword2"}}}` +
 		`]}}]}}}}`
@@ -112,7 +112,7 @@ func TestTacacsToOpenConfigAAAJSON(t *testing.T) {
 // TestTacacsToOpenConfigAAADefaults checks the leaves left out when the CMDB has
 // nothing to put in them.
 func TestTacacsToOpenConfigAAADefaults(t *testing.T) {
-	want := `{"system":{"aaa":{"server-groups":{"server-group":[{"config":{"name":"TACACS+","type":"TACACS"},"name":"TACACS+","servers":{"server":[` +
+	want := `{"system":{"aaa":{"authentication":{"config":{"authentication-method":["TACACS_ALL","LOCAL"]}},"server-groups":{"server-group":[{"config":{"name":"TACACS+","type":"TACACS"},"name":"TACACS+","servers":{"server":[` +
 		`{"address":"1.1.1.1","config":{"address":"1.1.1.1"}}` +
 		`]}}]}}}}`
 
