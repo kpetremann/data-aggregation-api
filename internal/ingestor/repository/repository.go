@@ -7,6 +7,7 @@ import (
 
 	"github.com/criteo/data-aggregation-api/internal/ingestor/cmdb"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
+	"github.com/criteo/data-aggregation-api/internal/model/cmdb/dhcprelay"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
@@ -36,6 +37,7 @@ type AssetsPerDevice struct {
 	NTP            map[string]*ntp.NTP
 	Syslog         map[string]*syslog.Syslog
 	Tacacs         map[string]*tacacs.Tacacs
+	DHCPRelays     map[string][]*dhcprelay.Relay
 	// SONiCHwsku and SONiCType are keyed by DCIM device type and role ID.
 	SONiCHwsku map[int]string
 	SONiCType  map[int]string
@@ -53,6 +55,7 @@ type Assets struct {
 	CmdbNTP            []*ntp.NTP
 	CmdbSyslog         []*syslog.Syslog
 	CmdbTacacs         []*tacacs.Tacacs
+	CmdbDHCPRelays     []*dhcprelay.Relay
 	CmdbSONiCHwsku     []*sonic.HwskuMapping
 	CmdbSONiCRoles     []*sonic.RoleMapping
 }
@@ -69,6 +72,7 @@ func (i *Assets) Precompute() *AssetsPerDevice {
 	precomputed.NTP = cmdb.PrecomputeNTP(i.CmdbNTP)
 	precomputed.Syslog = cmdb.PrecomputeSyslog(i.CmdbSyslog)
 	precomputed.Tacacs = cmdb.PrecomputeTacacs(i.CmdbTacacs)
+	precomputed.DHCPRelays = cmdb.PrecomputeDHCPRelays(i.CmdbDHCPRelays)
 	precomputed.SONiCHwsku = cmdb.PrecomputeSONiCHwsku(i.CmdbSONiCHwsku)
 	precomputed.SONiCType = cmdb.PrecomputeSONiCType(i.CmdbSONiCRoles)
 	return &precomputed
@@ -87,6 +91,7 @@ func (i *Assets) getStats() map[string]int {
 		"NTP":            len(i.CmdbNTP),
 		"syslog":         len(i.CmdbSyslog),
 		"TACACS":         len(i.CmdbTacacs),
+		"DHCPRelays":     len(i.CmdbDHCPRelays),
 		"SONiCHwsku":     len(i.CmdbSONiCHwsku),
 		"SONiCRoles":     len(i.CmdbSONiCRoles),
 	}
