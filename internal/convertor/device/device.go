@@ -8,14 +8,17 @@ import (
 
 	bgpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/bgp"
 	dhcprelayconvertors "github.com/criteo/data-aggregation-api/internal/convertor/dhcprelay"
+	ifconvertors "github.com/criteo/data-aggregation-api/internal/convertor/interfaces"
 	ntpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/ntp"
 	rpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/routingpolicy"
 	snmpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/snmp"
 	syslogconvertors "github.com/criteo/data-aggregation-api/internal/convertor/syslog"
 	tacacsconvertors "github.com/criteo/data-aggregation-api/internal/convertor/tacacs"
+	"github.com/criteo/data-aggregation-api/internal/ingestor/cmdb"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/dhcprelay"
+	cmdbif "github.com/criteo/data-aggregation-api/internal/model/cmdb/interfaces"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/snmp"
@@ -54,6 +57,7 @@ type Device struct {
 	PrefixLists     []*routingpolicy.PrefixList
 	CommunityLists  []*routingpolicy.CommunityList
 	RoutePolicies   []*routingpolicy.RoutePolicy
+	Interfaces      []*cmdbif.Interface
 	AFKEnabled      bool
 
 	// Hwsku and SONiCType are DEVICE_METADATA's hwsku and type, empty when
@@ -145,10 +149,44 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		log.Warn().Msgf("no SONiC HwSKU mapped to the device type %q of %s", dcimInfo.DeviceType.Model, dcimInfo.Hostname)
 	}
 
-	device.SONiCType, ok = devicesData.SONiCType[dcimInfo.DeviceRole.ID]
+	device.SONiCType, ok = devicesData.SONiCType[dcimInfo.Role.ID]
 	if !ok {
-		log.Warn().Msgf("no SONiC type mapped to the device role %q of %s", dcimInfo.DeviceRole.Name, dcimInfo.Hostname)
+		log.Warn().Msgf("no SONiC type mapped to the device role %q of %s", dcimInfo.Role.Name, dcimInfo.Hostname)
 	}
+
+	deviceInterfaces, ok := devicesData.DeviceInterfaces[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no device interfaces found for %s", dcimInfo.Hostname)
+	}
+
+	logicalInterfaces, ok := devicesData.LogicalInterfaces[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no logical interfaces found for %s", dcimInfo.Hostname)
+	}
+
+	managementRoutes, ok := devicesData.ManagementRoutes[dcimInfo.Hostname]
+	if !ok {
+		log.Info().Msgf("no management routes found for %s", dcimInfo.Hostname)
+	}
+
+	// The port layout is shared by all the devices of the same hardware model
+	// and network role. Devices without one keep their CMDB interface names.
+	layoutKey := cmdbif.PortLayoutKey{DeviceTypeID: dcimInfo.DeviceType.ID, RoleID: dcimInfo.Role.ID}
+	portLayout, ok := devicesData.PortLayouts[layoutKey]
+	if !ok {
+		log.Warn().Msgf("no port layout found for %s (device type %d, role %d)", dcimInfo.Hostname, layoutKey.DeviceTypeID, layoutKey.RoleID)
+	}
+
+	neighbors, ok := devicesData.Neighbors[dcimInfo.Hostname]
+	if !ok {
+		log.Warn().Msgf("no links found for %s", dcimInfo.Hostname)
+	}
+
+	interfaces, err := cmdb.ResolveInterfaces(dcimInfo.Hostname, deviceInterfaces, logicalInterfaces, managementRoutes, portLayout, neighbors)
+	if err != nil {
+		return nil, fmt.Errorf("interfaces precompute failed: %w", err)
+	}
+	device.Interfaces = interfaces
 
 	return device, nil
 }
@@ -180,6 +218,16 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("convert from DHCP relay to OpenConfig failed: %w", err)
 	}
 
+	interfacesConfig, networkInstanceInterfaces, err := ifconvertors.InterfacesToOpenconfig(d.Dcim.Hostname, d.Interfaces, d.AFKEnabled)
+	if err != nil {
+		return fmt.Errorf("convert from Interfaces to OpenConfig failed: %w", err)
+	}
+
+	networkInstanceProtocols, err := ifconvertors.ManagementRoutesToOpenconfig(d.Dcim.Hostname, d.Interfaces)
+	if err != nil {
+		return fmt.Errorf("convert from Management Routes to OpenConfig failed: %w", err)
+	}
+
 	// Assemble global configuration
 	bgpKey := openconfig.NetworkInstance_Protocol_Key{Identifier: openconfig.PolicyTypes_INSTALL_PROTOCOL_TYPE_BGP, Name: "bgp"}
 
@@ -206,6 +254,48 @@ func (d *Device) Generateconfigs() error {
 			Ntp:      ntpconvertors.NTPToOpenconfig(d.NTP),
 			Logging:  syslogconvertors.SyslogToOpenconfig(d.Syslog),
 		},
+	}
+
+	if len(interfacesConfig) > 0 {
+		config.Interface = interfacesConfig
+	}
+
+	// Bind interfaces to their network instance (VRF). Non-default network
+	// instances only exist through those bindings and are typed as L3VRF.
+	for networkInstanceName, interfaceBindings := range networkInstanceInterfaces {
+		networkInstance, ok := config.NetworkInstance[networkInstanceName]
+		if !ok {
+			name := networkInstanceName
+			networkInstance = &openconfig.NetworkInstance{
+				Name: &name,
+				Type: openconfig.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_L3VRF,
+			}
+			config.NetworkInstance[networkInstanceName] = networkInstance
+		}
+		networkInstance.Interface = interfaceBindings
+	}
+
+	// Add the routing protocol instances (static routes) to their network
+	// instance, which exists through the interface bindings above.
+	for networkInstanceName, protocols := range networkInstanceProtocols {
+		networkInstance, ok := config.NetworkInstance[networkInstanceName]
+		if !ok {
+			name := networkInstanceName
+			networkInstance = &openconfig.NetworkInstance{
+				Name: &name,
+				Type: openconfig.NetworkInstanceTypes_NETWORK_INSTANCE_TYPE_L3VRF,
+			}
+			config.NetworkInstance[networkInstanceName] = networkInstance
+		}
+		if networkInstance.Protocol == nil {
+			networkInstance.Protocol = make(map[openconfig.NetworkInstance_Protocol_Key]*openconfig.NetworkInstance_Protocol)
+		}
+		for key, protocol := range protocols {
+			if _, duplicate := networkInstance.Protocol[key]; duplicate {
+				return fmt.Errorf("duplicate protocol %s/%s in network instance %s of %s", key.Identifier, key.Name, networkInstanceName, d.Dcim.Hostname)
+			}
+			networkInstance.Protocol[key] = protocol
+		}
 	}
 
 	devJSON, err := ygot.EmitJSON(

@@ -12,8 +12,7 @@ import (
 // GetDHCPRelays returns all DHCP relay interfaces from the Network CMDB.
 func GetDHCPRelays() ([]*dhcprelay.Relay, error) {
 	response := netbox.NetboxResponse[dhcprelay.Relay]{}
-	// The relay has no direct device field: the device is reached through its interface.
-	params := datacenterFilterWithPrefix("logical_interface__parent_interface__device__")
+	params := deviceDatacenterFilter()
 
 	err := netbox.Get("/api/plugins/cmdb/dhcp-relay-interface/", &response, params)
 	if err != nil {
