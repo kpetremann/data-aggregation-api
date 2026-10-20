@@ -2,7 +2,6 @@ package cmdb
 
 import (
 	"fmt"
-	"net/url"
 
 	"github.com/rs/zerolog/log"
 
@@ -10,14 +9,13 @@ import (
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/interfaces"
 )
 
-// GetLinks returns all links from the Network CMDB.
-//
-// The links endpoint has no datacenter filter (unknown filters are silently
-// ignored), so the whole table is fetched.
+// GetLinks returns the links of the datacenter from the Network CMDB: the
+// links with at least one end in the datacenter.
 func GetLinks() ([]*interfaces.Link, error) {
 	response := netbox.NetboxResponse[interfaces.Link]{}
+	params := deviceDatacenterFilter()
 
-	err := netbox.Get("/api/plugins/cmdb/links/", &response, url.Values{})
+	err := netbox.Get("/api/plugins/cmdb/links/", &response, params)
 	if err != nil {
 		return nil, fmt.Errorf("links fetching failure: %w", err)
 	}

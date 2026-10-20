@@ -13,8 +13,7 @@ import (
 func GetManagementRoutes() ([]*interfaces.ManagementRoute, error) {
 	response := netbox.NetboxResponse[interfaces.ManagementRoute]{}
 
-	// management routes are attached to a device via the parent interface of their logical interface
-	params := datacenterFilterWithPrefix("logical_interface__parent_interface__device__")
+	params := deviceDatacenterFilter()
 
 	err := netbox.Get("/api/plugins/cmdb/management-routes/", &response, params)
 	if err != nil {

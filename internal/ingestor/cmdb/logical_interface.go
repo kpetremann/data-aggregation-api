@@ -13,8 +13,7 @@ import (
 func GetLogicalInterfaces() ([]*interfaces.LogicalInterface, error) {
 	response := netbox.NetboxResponse[interfaces.LogicalInterface]{}
 
-	// logical interfaces are attached to a device via their parent interface
-	params := datacenterFilterWithPrefix("parent_interface__device__")
+	params := deviceDatacenterFilter()
 
 	err := netbox.Get("/api/plugins/cmdb/logical-interfaces/", &response, params)
 	if err != nil {
