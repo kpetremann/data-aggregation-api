@@ -87,7 +87,7 @@ const (
 func tor() *dcim.NetworkDevice {
 	d := &dcim.NetworkDevice{Hostname: "tor01-01"}
 	d.DeviceType.ID, d.DeviceType.Model = deviceTypeID, "MSN2700"
-	d.DeviceRole.ID, d.DeviceRole.Name = deviceRoleID, "ToR"
+	d.Role = dcim.Role{ID: deviceRoleID, Name: "ToR"}
 	return d
 }
 
@@ -125,6 +125,26 @@ func TestNewDevice_UnmappedIsOptional(t *testing.T) {
 	}
 	if dev.Hwsku != "" || dev.SONiCType != "" {
 		t.Errorf("Hwsku, SONiCType = %q, %q, want empty", dev.Hwsku, dev.SONiCType)
+	}
+}
+
+// TestNewDevice_RoleFromEitherNetBoxField: the SONiC type is resolved from
+// the role whether NetBox exposes it as "role" or as "device_role".
+func TestNewDevice_RoleFromEitherNetBoxField(t *testing.T) {
+	for _, field := range []string{"role", "device_role"} {
+		var d dcim.NetworkDevice
+		raw := `{"name": "tor01-01", "device_type": {"id": 10}, "` + field + `": {"id": 20, "name": "ToR"}}`
+		if err := json.Unmarshal([]byte(raw), &d); err != nil {
+			t.Fatal(err)
+		}
+
+		dev, err := NewDevice(&d, assets())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if dev.SONiCType != "ToRRouter" {
+			t.Errorf("%s: SONiCType = %q, want ToRRouter", field, dev.SONiCType)
+		}
 	}
 }
 

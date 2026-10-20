@@ -101,7 +101,7 @@ func (i *Assets) Precompute() *AssetsPerDevice {
 func (i *Assets) portLayoutPerDevice(portLayouts map[interfaces.PortLayoutKey]interfaces.PortLayoutTable) map[string]interfaces.PortLayoutTable {
 	layouts := make(map[string]interfaces.PortLayoutTable, len(i.DeviceInventory))
 	for _, device := range i.DeviceInventory {
-		key := interfaces.PortLayoutKey{DeviceTypeID: device.DeviceTypeID(), RoleID: device.RoleID()}
+		key := interfaces.PortLayoutKey{DeviceTypeID: device.DeviceType.ID, RoleID: device.Role.ID}
 		if layout, ok := portLayouts[key]; ok {
 			layouts[device.Hostname] = layout
 		}

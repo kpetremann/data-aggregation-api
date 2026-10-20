@@ -152,9 +152,9 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		log.Warn().Msgf("no SONiC HwSKU mapped to the device type %q of %s", dcimInfo.DeviceType.Model, dcimInfo.Hostname)
 	}
 
-	device.SONiCType, ok = devicesData.SONiCType[dcimInfo.DeviceRole.ID]
+	device.SONiCType, ok = devicesData.SONiCType[dcimInfo.Role.ID]
 	if !ok {
-		log.Warn().Msgf("no SONiC type mapped to the device role %q of %s", dcimInfo.DeviceRole.Name, dcimInfo.Hostname)
+		log.Warn().Msgf("no SONiC type mapped to the device role %q of %s", dcimInfo.Role.Name, dcimInfo.Hostname)
 	}
 
 	device.DeviceInterfaces, ok = devicesData.DeviceInterfaces[dcimInfo.Hostname]
@@ -173,7 +173,7 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 
 	// The port layout is shared by all the devices of the same hardware model
 	// and network role. Devices without one keep their CMDB interface names.
-	layoutKey := cmdbif.PortLayoutKey{DeviceTypeID: dcimInfo.DeviceTypeID(), RoleID: dcimInfo.RoleID()}
+	layoutKey := cmdbif.PortLayoutKey{DeviceTypeID: dcimInfo.DeviceType.ID, RoleID: dcimInfo.Role.ID}
 	device.PortLayout, ok = devicesData.PortLayouts[layoutKey]
 	if !ok {
 		log.Warn().Msgf("no port layout found for %s (device type %d, role %d)", dcimInfo.Hostname, layoutKey.DeviceTypeID, layoutKey.RoleID)
