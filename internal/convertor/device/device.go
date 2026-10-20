@@ -14,6 +14,7 @@ import (
 	snmpconvertors "github.com/criteo/data-aggregation-api/internal/convertor/snmp"
 	syslogconvertors "github.com/criteo/data-aggregation-api/internal/convertor/syslog"
 	tacacsconvertors "github.com/criteo/data-aggregation-api/internal/convertor/tacacs"
+	"github.com/criteo/data-aggregation-api/internal/ingestor/cmdb"
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/dhcprelay"
@@ -42,26 +43,22 @@ type GeneratedConfig struct {
 }
 
 type Device struct {
-	mutex             *sync.Mutex
-	Dcim              *dcim.NetworkDevice
-	Config            *GeneratedConfig
-	BGPGlobalConfig   *bgp.BGPGlobal
-	SNMP              *snmp.SNMP
-	NTP               *ntp.NTP
-	Syslog            *syslog.Syslog
-	Tacacs            *tacacs.Tacacs
-	DHCPRelays        []*dhcprelay.Relay
-	Sessions          []*bgp.Session
-	PeerGroups        []*bgp.PeerGroup
-	PrefixLists       []*routingpolicy.PrefixList
-	CommunityLists    []*routingpolicy.CommunityList
-	RoutePolicies     []*routingpolicy.RoutePolicy
-	DeviceInterfaces  []*cmdbif.DeviceInterface
-	LogicalInterfaces []*cmdbif.LogicalInterface
-	ManagementRoutes  []*cmdbif.ManagementRoute
-	PortLayout        cmdbif.PortLayoutTable
-	Neighbors         cmdbif.NeighborTable
-	AFKEnabled        bool
+	mutex           *sync.Mutex
+	Dcim            *dcim.NetworkDevice
+	Config          *GeneratedConfig
+	BGPGlobalConfig *bgp.BGPGlobal
+	SNMP            *snmp.SNMP
+	NTP             *ntp.NTP
+	Syslog          *syslog.Syslog
+	Tacacs          *tacacs.Tacacs
+	DHCPRelays      []*dhcprelay.Relay
+	Sessions        []*bgp.Session
+	PeerGroups      []*bgp.PeerGroup
+	PrefixLists     []*routingpolicy.PrefixList
+	CommunityLists  []*routingpolicy.CommunityList
+	RoutePolicies   []*routingpolicy.RoutePolicy
+	Interfaces      []*cmdbif.Interface
+	AFKEnabled      bool
 
 	// Hwsku and SONiCType are DEVICE_METADATA's hwsku and type, empty when
 	// the device's model or role is not mapped.
@@ -157,32 +154,39 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 		log.Warn().Msgf("no SONiC type mapped to the device role %q of %s", dcimInfo.Role.Name, dcimInfo.Hostname)
 	}
 
-	device.DeviceInterfaces, ok = devicesData.DeviceInterfaces[dcimInfo.Hostname]
+	deviceInterfaces, ok := devicesData.DeviceInterfaces[dcimInfo.Hostname]
 	if !ok {
 		log.Warn().Msgf("no device interfaces found for %s", dcimInfo.Hostname)
 	}
 
-	device.LogicalInterfaces, ok = devicesData.LogicalInterfaces[dcimInfo.Hostname]
+	logicalInterfaces, ok := devicesData.LogicalInterfaces[dcimInfo.Hostname]
 	if !ok {
 		log.Warn().Msgf("no logical interfaces found for %s", dcimInfo.Hostname)
 	}
 
-	// Only the devices whose management routing table is generated have
-	// management routes: having none is normal.
-	device.ManagementRoutes = devicesData.ManagementRoutes[dcimInfo.Hostname]
+	managementRoutes, ok := devicesData.ManagementRoutes[dcimInfo.Hostname]
+	if !ok {
+		log.Info().Msgf("no management routes found for %s", dcimInfo.Hostname)
+	}
 
 	// The port layout is shared by all the devices of the same hardware model
 	// and network role. Devices without one keep their CMDB interface names.
 	layoutKey := cmdbif.PortLayoutKey{DeviceTypeID: dcimInfo.DeviceType.ID, RoleID: dcimInfo.Role.ID}
-	device.PortLayout, ok = devicesData.PortLayouts[layoutKey]
+	portLayout, ok := devicesData.PortLayouts[layoutKey]
 	if !ok {
 		log.Warn().Msgf("no port layout found for %s (device type %d, role %d)", dcimInfo.Hostname, layoutKey.DeviceTypeID, layoutKey.RoleID)
 	}
 
-	device.Neighbors, ok = devicesData.Neighbors[dcimInfo.Hostname]
+	neighbors, ok := devicesData.Neighbors[dcimInfo.Hostname]
 	if !ok {
 		log.Warn().Msgf("no links found for %s", dcimInfo.Hostname)
 	}
+
+	interfaces, err := cmdb.ResolveInterfaces(dcimInfo.Hostname, deviceInterfaces, logicalInterfaces, managementRoutes, portLayout, neighbors)
+	if err != nil {
+		return nil, fmt.Errorf("interfaces precompute failed: %w", err)
+	}
+	device.Interfaces = interfaces
 
 	return device, nil
 }
@@ -214,12 +218,12 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("convert from DHCP relay to OpenConfig failed: %w", err)
 	}
 
-	interfacesConfig, networkInstanceInterfaces, err := ifconvertors.InterfacesToOpenconfig(d.Dcim.Hostname, d.DeviceInterfaces, d.LogicalInterfaces, d.PortLayout, d.Neighbors, d.AFKEnabled)
+	interfacesConfig, networkInstanceInterfaces, err := ifconvertors.InterfacesToOpenconfig(d.Dcim.Hostname, d.Interfaces, d.AFKEnabled)
 	if err != nil {
 		return fmt.Errorf("convert from Interfaces to OpenConfig failed: %w", err)
 	}
 
-	networkInstanceProtocols, err := ifconvertors.ManagementRoutesToOpenconfig(d.Dcim.Hostname, d.ManagementRoutes, d.DeviceInterfaces, d.PortLayout, interfacesConfig, networkInstanceInterfaces)
+	networkInstanceProtocols, err := ifconvertors.ManagementRoutesToOpenconfig(d.Dcim.Hostname, d.Interfaces)
 	if err != nil {
 		return fmt.Errorf("convert from Management Routes to OpenConfig failed: %w", err)
 	}

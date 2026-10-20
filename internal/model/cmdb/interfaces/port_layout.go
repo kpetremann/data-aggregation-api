@@ -59,5 +59,22 @@ func (p *PortLayout) LanesString() string {
 }
 
 // PortLayoutTable is the port layout of one device: ports indexed by the
-// names the CMDB device interfaces use.
+// names the CMDB device interfaces use. A name shared by several ports is
+// ambiguous and kept as a nil entry.
 type PortLayoutTable map[string]*PortLayout
+
+// IsAmbiguous tells whether several ports bear the name.
+func (t PortLayoutTable) IsAmbiguous(cmdbName string) bool {
+	port, ok := t[cmdbName]
+	return ok && port == nil
+}
+
+// PortName returns the name a CMDB interface bears on its device: the vendor
+// name of its port layout entry when it has one, its CMDB name otherwise (the
+// CMDB often names front-panel ports after their remote end, e.g. to_spine_01).
+func (t PortLayoutTable) PortName(cmdbName string) string {
+	if port := t[cmdbName]; port != nil && port.VendorName != "" {
+		return port.VendorName
+	}
+	return cmdbName
+}

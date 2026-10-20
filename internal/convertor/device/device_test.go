@@ -2,6 +2,7 @@ package device
 
 import (
 	"encoding/json"
+	"strings"
 	"sync"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 
 	"github.com/criteo/data-aggregation-api/internal/ingestor/repository"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/bgp"
+	cmdbif "github.com/criteo/data-aggregation-api/internal/model/cmdb/interfaces"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/ntp"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/routingpolicy"
 	"github.com/criteo/data-aggregation-api/internal/model/cmdb/tacacs"
@@ -125,6 +127,19 @@ func TestNewDevice_UnmappedIsOptional(t *testing.T) {
 	}
 	if dev.Hwsku != "" || dev.SONiCType != "" {
 		t.Errorf("Hwsku, SONiCType = %q, %q, want empty", dev.Hwsku, dev.SONiCType)
+	}
+}
+
+// TestNewDevice_InvalidInterfaces: interfaces no configuration can be
+// generated from fail at precompute, which only drops this device.
+func TestNewDevice_InvalidInterfaces(t *testing.T) {
+	data := assets()
+	ethernet0 := &cmdbif.DeviceInterface{Name: "Ethernet0"}
+	data.DeviceInterfaces = map[string][]*cmdbif.DeviceInterface{"tor01-01": {ethernet0, ethernet0}}
+
+	_, err := NewDevice(tor(), data)
+	if err == nil || !strings.Contains(err.Error(), "duplicate device interface Ethernet0") {
+		t.Errorf("unexpected error: %v", err)
 	}
 }
 

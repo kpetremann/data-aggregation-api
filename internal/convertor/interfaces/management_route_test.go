@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	ifconvertors "github.com/criteo/data-aggregation-api/internal/convertor/interfaces"
+	"github.com/criteo/data-aggregation-api/internal/ingestor/cmdb"
 	cmdbif "github.com/criteo/data-aggregation-api/internal/model/cmdb/interfaces"
 	"github.com/criteo/data-aggregation-api/internal/model/openconfig"
 	"github.com/criteo/data-aggregation-api/internal/types"
@@ -46,33 +47,44 @@ func sonicManagementRoutes(gateway string) []*cmdbif.ManagementRoute {
 	}
 }
 
-// managementDevice converts a device with an eth0 management interface
-// addressed with address in the vrf (no VRF when empty). The management
-// interface is not a front-panel port: it is not in the port layout.
-func managementDevice(t *testing.T, address string, vrf string) (map[string]*openconfig.Interface, ifconvertors.NetworkInstanceInterfaces, []*cmdbif.DeviceInterface, cmdbif.PortLayoutTable) {
-	t.Helper()
-
+// managementDevice precomputes and converts a device with an eth0
+// management interface addressed with address (none when empty) in the vrf
+// (no VRF when empty), carrying routes. The management interface is not a
+// front-panel port: it is not in the port layout.
+func managementDevice(address string, vrf string, routes []*cmdbif.ManagementRoute) (map[string]*openconfig.Interface, ifconvertors.NetworkInstanceInterfaces, ifconvertors.NetworkInstanceProtocols, error) {
 	mgmt := newDeviceInterface("eth0", true)
 	ethernet0 := newDeviceInterface("Ethernet0", true)
-	deviceInterfaces := []*cmdbif.DeviceInterface{mgmt, ethernet0}
 
 	unit0 := newLogicalInterface("eth0", 0, cmdbif.TypeL3)
-	unit0.IPv4Address = newIPAddress(address, 4)
+	if address != "" {
+		unit0.IPv4Address = newIPAddress(address, 4)
+	}
 	if vrf != "" {
 		unit0.Vrf = &cmdbif.VRFLite{Name: vrf}
 	}
 
-	portLayout := cmdbif.PortLayoutTable{}
-
-	interfaces, bindings, err := ifconvertors.InterfacesToOpenconfig(hostname, deviceInterfaces, []*cmdbif.LogicalInterface{unit0}, portLayout, nil, false)
+	ifaces, err := cmdb.ResolveInterfaces(hostname, []*cmdbif.DeviceInterface{mgmt, ethernet0}, []*cmdbif.LogicalInterface{unit0}, routes, cmdbif.PortLayoutTable{}, nil)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		return nil, nil, nil, err
 	}
-	return interfaces, bindings, deviceInterfaces, portLayout
+
+	interfaces, bindings, err := ifconvertors.InterfacesToOpenconfig(hostname, ifaces, false)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	protocols, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, ifaces)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return interfaces, bindings, protocols, nil
 }
 
 func TestManagementFlag(t *testing.T) {
-	interfaces, _, _, _ := managementDevice(t, "10.0.3.69/21", "prod")
+	interfaces, _, _, err := managementDevice("10.0.3.69/21", "prod", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 
 	if interfaces["eth0"].Management == nil || !*interfaces["eth0"].Management {
 		t.Error("eth0 is not marked as the management interface")
@@ -98,9 +110,7 @@ func TestManagementRoutesToOpenconfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			interfaces, bindings, deviceInterfaces, portLayout := managementDevice(t, test.address, test.vrf)
-
-			protocols, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, sonicManagementRoutes(test.gateway), deviceInterfaces, portLayout, interfaces, bindings)
+			interfaces, _, protocols, err := managementDevice(test.address, test.vrf, sonicManagementRoutes(test.gateway))
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
@@ -147,9 +157,7 @@ func TestManagementRoutesToOpenconfig(t *testing.T) {
 
 func TestManagementRoutesToOpenconfigNoRoutes(t *testing.T) {
 	// a device without management routes (not SONiC) is the normal case
-	interfaces, bindings, deviceInterfaces, portLayout := managementDevice(t, "10.0.3.69/21", "prod")
-
-	protocols, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, nil, deviceInterfaces, portLayout, interfaces, bindings)
+	interfaces, _, protocols, err := managementDevice("10.0.3.69/21", "prod", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -162,10 +170,10 @@ func TestManagementRoutesToOpenconfigNoRoutes(t *testing.T) {
 }
 
 func TestManagementRoutesToOpenconfigDuplicateForcedRoute(t *testing.T) {
-	interfaces, bindings, deviceInterfaces, portLayout := managementDevice(t, "10.0.3.69/21", "prod")
 	routes := append(sonicManagementRoutes("10.0.0.1"), newManagementRoute("eth0", 0, cmdbif.ManagementRouteForced, "172.16.0.0/12", ""))
 
-	if _, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, routes, deviceInterfaces, portLayout, interfaces, bindings); err != nil {
+	interfaces, _, _, err := managementDevice("10.0.3.69/21", "prod", routes)
+	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -177,15 +185,17 @@ func TestManagementRoutesToOpenconfigDuplicateForcedRoute(t *testing.T) {
 
 func TestManagementRoutesToOpenconfigForcedWithoutStatic(t *testing.T) {
 	// accepted with a warning: SONiC accepts it
-	interfaces, bindings, deviceInterfaces, portLayout := managementDevice(t, "10.0.3.69/21", "prod")
 	routes := []*cmdbif.ManagementRoute{newManagementRoute("eth0", 0, cmdbif.ManagementRouteForced, "172.16.0.0/12", "")}
 
-	protocols, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, routes, deviceInterfaces, portLayout, interfaces, bindings)
+	interfaces, _, protocols, err := managementDevice("10.0.3.69/21", "prod", routes)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if len(protocols) != 0 {
 		t.Errorf("unexpected protocols: %v", protocols)
+	}
+	if diff := cmp.Diff(interfaces["eth0"].Subinterface[0].Ipv4.ForcedRoutes, []string{"172.16.0.0/12"}); diff != "" {
+		t.Errorf("unexpected forced routes: %s", diff)
 	}
 }
 
@@ -262,9 +272,7 @@ func TestManagementRoutesToOpenconfigErrors(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			interfaces, bindings, deviceInterfaces, portLayout := managementDevice(t, "10.0.3.69/21", "prod")
-
-			_, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, test.routes, deviceInterfaces, portLayout, interfaces, bindings)
+			_, _, _, err := managementDevice("10.0.3.69/21", "prod", test.routes)
 			if err == nil {
 				t.Fatal("expected an error")
 			}
@@ -276,17 +284,7 @@ func TestManagementRoutesToOpenconfigErrors(t *testing.T) {
 }
 
 func TestManagementRoutesToOpenconfigNoIPv4Address(t *testing.T) {
-	mgmt := newDeviceInterface("eth0", true)
-	unit0 := newLogicalInterface("eth0", 0, cmdbif.TypeL3)
-	unit0.Vrf = &cmdbif.VRFLite{Name: "prod"}
-	portLayout := cmdbif.PortLayoutTable{}
-
-	interfaces, bindings, err := ifconvertors.InterfacesToOpenconfig(hostname, []*cmdbif.DeviceInterface{mgmt}, []*cmdbif.LogicalInterface{unit0}, portLayout, nil, false)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
-	_, err = ifconvertors.ManagementRoutesToOpenconfig(hostname, sonicManagementRoutes("10.0.0.1"), []*cmdbif.DeviceInterface{mgmt}, portLayout, interfaces, bindings)
+	_, _, _, err := managementDevice("", "prod", sonicManagementRoutes("10.0.0.1"))
 	if err == nil || !strings.Contains(err.Error(), "no IPv4 address on eth0.0") {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -296,9 +294,7 @@ func TestManagementRoutesToOpenconfigNoIPv4Address(t *testing.T) {
 // document through ygot with validation enabled (leafrefs included) and
 // checks the RFC7951 output.
 func TestManagementRoutesToOpenconfigValidDocument(t *testing.T) {
-	interfaces, bindings, deviceInterfaces, portLayout := managementDevice(t, "10.0.19.72/21", "prod")
-
-	protocols, err := ifconvertors.ManagementRoutesToOpenconfig(hostname, sonicManagementRoutes("10.0.16.1"), deviceInterfaces, portLayout, interfaces, bindings)
+	interfaces, bindings, protocols, err := managementDevice("10.0.19.72/21", "prod", sonicManagementRoutes("10.0.16.1"))
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

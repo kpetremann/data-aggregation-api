@@ -20,11 +20,8 @@ type Link struct {
 type Neighbor struct {
 	// Device is the hostname of the remote device.
 	Device string
-	// Interface is the CMDB name of the remote device interface (e.g. to_L3-SP01).
-	Interface string
-	// Port is the port layout entry of the remote interface, nil when the
-	// remote device has no port layout or the interface is not in it.
-	Port *PortLayout
+	// Port is the name of the remote interface on the remote device: see PortName.
+	Port string
 }
 
 // NeighborTable is the neighbors of one device, indexed by the CMDB name of

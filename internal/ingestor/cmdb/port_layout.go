@@ -33,6 +33,11 @@ func GetPortLayouts() ([]*interfaces.PortLayout, error) {
 // role) and indexes them by the name the CMDB device interfaces use: the
 // logical name (e.g. to_L3-SP01), and the generic name for the ports whose
 // device interface is named after the port itself (e.g. eth0).
+//
+// A logical name shared by several ports (e.g. the UNUSED placeholder) is
+// ambiguous: there is no way to know which port is the right one. It is kept
+// as a nil entry, which fails the devices whose interfaces use it (see
+// ResolveInterfaces).
 func PrecomputePortLayouts(portLayouts []*interfaces.PortLayout) map[interfaces.PortLayoutKey]interfaces.PortLayoutTable {
 	var tables = make(map[interfaces.PortLayoutKey]interfaces.PortLayoutTable)
 	for _, port := range portLayouts {
@@ -44,8 +49,13 @@ func PrecomputePortLayouts(portLayouts []*interfaces.PortLayout) map[interfaces.
 		}
 
 		if port.LogicalName != "" {
-			if previous, duplicate := table[port.LogicalName]; duplicate && previous.LogicalName == port.LogicalName {
-				log.Warn().Msgf("duplicate logical name %s in the port layout of device type %d, role %d", port.LogicalName, key.DeviceTypeID, key.RoleID)
+			if previous, duplicate := table[port.LogicalName]; duplicate {
+				if previous != nil {
+					log.Debug().Msgf("ports %s and %s of the port layout of device type %d, role %d share the logical name %s",
+						previous.Name, port.Name, key.DeviceTypeID, key.RoleID, port.LogicalName)
+				}
+				table[port.LogicalName] = nil
+				continue
 			}
 			table[port.LogicalName] = port
 		}

@@ -32,9 +32,8 @@ func GetLinks() ([]*interfaces.Link, error) {
 // PrecomputeNeighbors indexes each link from both ends: every device gets the
 // remote end of each of its links, keyed by its local interface name.
 //
-// portLayouts gives the port layout of a device by hostname. It resolves the
-// remote interface to its port layout entry, so that the neighbor port can be
-// named the way the remote device names it.
+// portLayouts gives the port layout of a device by hostname. It names the
+// neighbor port the way the remote device names it (see PortLayoutTable.PortName).
 func PrecomputeNeighbors(links []*interfaces.Link, portLayouts map[string]interfaces.PortLayoutTable) map[string]interfaces.NeighborTable {
 	var neighborsPerDevice = make(map[string]interfaces.NeighborTable)
 
@@ -50,16 +49,15 @@ func PrecomputeNeighbors(links []*interfaces.Link, portLayouts map[string]interf
 		if previous, duplicate := table[local.Name]; duplicate {
 			if previous != nil {
 				log.Warn().Msgf("interface %s of %s is in several links (to %s:%s and %s:%s), neighbor ignored",
-					local.Name, local.Device.Name, previous.Device, previous.Interface, remote.Device.Name, remote.Name)
+					local.Name, local.Device.Name, previous.Device, previous.Port, remote.Device.Name, remote.Name)
 				table[local.Name] = nil
 			}
 			return
 		}
 
 		table[local.Name] = &interfaces.Neighbor{
-			Device:    remote.Device.Name,
-			Interface: remote.Name,
-			Port:      portLayouts[remote.Device.Name][remote.Name],
+			Device: remote.Device.Name,
+			Port:   portLayouts[remote.Device.Name].PortName(remote.Name),
 		}
 	}
 

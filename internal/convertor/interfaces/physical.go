@@ -11,12 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ManagementInterfaceName is the name of the management interface of a
-// device in the NOS, the one SONiC configures through MGMT_PORT and
-// MGMT_INTERFACE. It is matched against the OpenConfig interface name, i.e.
-// after the port layout translation when the interface has a layout entry.
-const ManagementInterfaceName = "eth0"
-
 // speedToOpenconfig maps the CMDB interface speed (in Mb/s) to the OpenConfig
 // Ethernet speed identities.
 var speedToOpenconfig = map[uint32]openconfig.E_IfEthernet_ETHERNET_SPEED{
@@ -87,65 +81,11 @@ func PortIndex(shortName string) (uint16, bool) {
 	return uint16(number - 1), true
 }
 
-// InterfaceName returns the name a CMDB device interface bears in OpenConfig:
-// the vendor name of its port layout entry when the interface is a
-// front-panel port (the CMDB often names those after their remote end, e.g.
-// to_spine_01), its CMDB name otherwise.
-func InterfaceName(deviceInterface *cmdbif.DeviceInterface, port *cmdbif.PortLayout) string {
-	return PortName(deviceInterface.Name, port)
-}
-
-// PortName returns the name a CMDB interface bears on its device: the vendor
-// name of its port layout entry when it has one, its CMDB name otherwise.
-func PortName(cmdbName string, port *cmdbif.PortLayout) string {
-	if port != nil && port.VendorName != "" {
-		return port.VendorName
-	}
-	return cmdbName
-}
-
-// applyNeighbor sets the remote end of the link connected to the interface.
-// OpenConfig path: /interfaces/interface/config/neighbor-{name,port}.
-func applyNeighbor(iface *openconfig.Interface, neighbor *cmdbif.Neighbor) {
-	if neighbor == nil {
-		return
-	}
-	name := neighbor.Device
-	port := PortName(neighbor.Interface, neighbor.Port)
-	iface.NeighborName = &name
-	iface.NeighborPort = &port
-}
-
-// DeviceInterfaceToOpenconfig converts one CMDB device (physical) interface to OpenConfig.
-// OpenConfig path: /interfaces/interface/.
-//
-// port is the port layout entry of the interface, nil when the interface is
-// not a front-panel port or when the device has no port layout. withPortIndex
-// emits the front-panel port index derived from the port short name, which
-// only AFK managed devices need (see PortIndex).
-func DeviceInterfaceToOpenconfig(hostname string, deviceInterface *cmdbif.DeviceInterface, port *cmdbif.PortLayout, withPortIndex bool) (*openconfig.Interface, error) {
-	name := InterfaceName(deviceInterface, port)
-
-	iface := openconfig.Interface{
-		Name:    &name,
-		Enabled: deviceInterface.Enabled,
-	}
-
-	if deviceInterface.Description != "" {
-		iface.Description = &deviceInterface.Description
-	}
-
-	// The management interface is identified by its NOS name, after the port
-	// layout translation: OpenConfig has no type for it (it is ethernetCsmacd
-	// like a front-panel port) and its vendor name (eth0) is a naming
-	// convention of its own.
-	if name == ManagementInterfaceName {
-		management := true
-		iface.Management = &management
-	}
-
-	ifaceType := interfaceTypeFromName(name)
-	if ifaceType == openconfig.IETFInterfaces_InterfaceType_UNSET && (port != nil || deviceInterface.Speed != 0) {
+// interfaceType returns the OpenConfig type of a device interface, UNSET when
+// it cannot be derived.
+func interfaceType(hostname string, iface *cmdbif.Interface) openconfig.E_IETFInterfaces_InterfaceType {
+	ifaceType := interfaceTypeFromName(iface.Name)
+	if ifaceType == openconfig.IETFInterfaces_InterfaceType_UNSET && (iface.Port != nil || iface.DeviceInterface.Speed != 0) {
 		// A port layout entry is a physical front-panel port by definition,
 		// and only physical ports carry a speed in the CMDB. This covers the
 		// CMDB naming after the remote end (to_L3-SP01) when the device has
@@ -153,23 +93,95 @@ func DeviceInterfaceToOpenconfig(hostname string, deviceInterface *cmdbif.Device
 		ifaceType = openconfig.IETFInterfaces_InterfaceType_ethernetCsmacd
 	}
 	if ifaceType == openconfig.IETFInterfaces_InterfaceType_UNSET {
-		log.Warn().Msgf("unable to derive the type of interface %s on %s from its name, type is not emitted", name, hostname)
-	} else {
-		iface.Type = ifaceType
+		log.Warn().Msgf("unable to derive the type of interface %s on %s from its name, type is not emitted", iface.Name, hostname)
 	}
+	return ifaceType
+}
+
+// DeviceInterfaceToOpenconfig converts one precomputed CMDB device interface,
+// with its logical interfaces, to OpenConfig.
+// OpenConfig path: /interfaces/interface/.
+//
+// withPortIndex emits the front-panel port index derived from the port short
+// name, which only AFK managed devices need (see PortIndex).
+func DeviceInterfaceToOpenconfig(hostname string, iface *cmdbif.Interface, withPortIndex bool) (*openconfig.Interface, error) {
+	deviceInterface := iface.DeviceInterface
+	name := iface.Name
+	ifaceType := interfaceType(hostname, iface)
 
 	// Ethernet attributes only make sense on Ethernet interfaces. The CMDB
 	// stores defaults (e.g. autonegotiation=true) on every interface kind,
 	// so they are only emitted when the interface is an Ethernet one.
+	var ethernet *openconfig.Interface_Ethernet
 	if ifaceType == openconfig.IETFInterfaces_InterfaceType_ethernetCsmacd {
-		ethernet, err := ethernetToOpenconfig(hostname, deviceInterface, port, withPortIndex)
+		var err error
+		ethernet, err = ethernetToOpenconfig(hostname, deviceInterface, iface.Port, withPortIndex)
 		if err != nil {
 			return nil, err
 		}
-		iface.Ethernet = ethernet
 	}
 
-	return &iface, nil
+	subinterfaces, err := subinterfacesToOpenconfig(hostname, iface, ifaceType == openconfig.IETFInterfaces_InterfaceType_softwareLoopback)
+	if err != nil {
+		return nil, err
+	}
+
+	mtu, err := interfaceMtu(hostname, iface)
+	if err != nil {
+		return nil, err
+	}
+
+	switchedVlan, err := interfaceSwitchedVlan(hostname, iface)
+	if err != nil {
+		return nil, err
+	}
+	var aggregation *openconfig.Interface_Aggregation
+	if switchedVlan != nil {
+		switch ifaceType { //nolint:exhaustive // only Ethernet and LAG interfaces carry 802.1Q
+		case openconfig.IETFInterfaces_InterfaceType_ethernetCsmacd:
+			if ethernet == nil {
+				ethernet = &openconfig.Interface_Ethernet{}
+			}
+			ethernet.SwitchedVlan = switchedVlan
+		case openconfig.IETFInterfaces_InterfaceType_ieee8023adLag:
+			aggregation = &openconfig.Interface_Aggregation{SwitchedVlan: toAggregationSwitchedVlan(switchedVlan)}
+		default:
+			return nil, fmt.Errorf("802.1Q configuration on device interface %s of %s is not supported: it is neither an Ethernet nor a LAG interface", deviceInterface.Name, hostname)
+		}
+	}
+
+	converted := openconfig.Interface{
+		Name:                 &name,
+		Enabled:              deviceInterface.Enabled,
+		Type:                 ifaceType,
+		Mtu:                  mtu,
+		UseIpv6LinkLocalOnly: ipv6LinkLocalOnly(iface),
+		Ethernet:             ethernet,
+		Aggregation:          aggregation,
+		Subinterface:         subinterfaces,
+	}
+
+	if deviceInterface.Description != "" {
+		converted.Description = &deviceInterface.Description
+	}
+
+	// The management interface is identified by its NOS name, after the port
+	// layout translation: OpenConfig has no type for it (it is ethernetCsmacd
+	// like a front-panel port) and its vendor name (eth0) is a naming
+	// convention of its own.
+	if name == cmdbif.ManagementInterfaceName {
+		management := true
+		converted.Management = &management
+	}
+
+	// OpenConfig path: /interfaces/interface/config/neighbor-{name,port}.
+	if iface.Neighbor != nil {
+		neighborName, neighborPort := iface.Neighbor.Device, iface.Neighbor.Port
+		converted.NeighborName = &neighborName
+		converted.NeighborPort = &neighborPort
+	}
+
+	return &converted, nil
 }
 
 // ethernetToOpenconfig converts the Ethernet attributes of a CMDB device

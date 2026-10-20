@@ -128,6 +128,34 @@ func TestPrecomputePortLayouts(t *testing.T) {
 	}
 }
 
+// TestPrecomputePortLayoutsDuplicateLogicalName: a logical name shared by
+// several ports (e.g. the UNUSED placeholder) is ambiguous, the other names of
+// the layout are kept.
+func TestPrecomputePortLayoutsDuplicateLogicalName(t *testing.T) {
+	var cmdbOutput []*interfaces.PortLayout
+	if err := json.Unmarshal([]byte(portLayoutsJSON), &cmdbOutput); err != nil {
+		t.Fatalf("unable to load test data: %s", err)
+	}
+	// etp1 and etp2 of the ToR layout are both unused
+	cmdbOutput[0].LogicalName = "UNUSED"
+	cmdbOutput[1].LogicalName = "UNUSED"
+
+	tor := cmdb.PrecomputePortLayouts(cmdbOutput)[interfaces.PortLayoutKey{DeviceTypeID: 7, RoleID: 3}]
+
+	if !tor.IsAmbiguous("UNUSED") {
+		t.Error("UNUSED must be ambiguous")
+	}
+	if tor.PortName("UNUSED") != "UNUSED" {
+		t.Errorf("an ambiguous name must not be translated, got %s", tor.PortName("UNUSED"))
+	}
+	// generic names are not ambiguous
+	for name, want := range map[string]string{"etp1": "Ethernet0", "etp2": "Ethernet4", "eth0": "eth0"} {
+		if tor.IsAmbiguous(name) || tor.PortName(name) != want {
+			t.Errorf("unexpected port name for %s: %s", name, tor.PortName(name))
+		}
+	}
+}
+
 func TestPrecomputePortLayoutsEmpty(t *testing.T) {
 	out := cmdb.PrecomputePortLayouts(nil)
 	if len(out) != 0 {

@@ -9,10 +9,46 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// subinterfacesToOpenconfig converts the logical interfaces of a device
+// interface, keyed by index. It returns nil when there is none.
+// loopback tells whether the device interface is a loopback.
+func subinterfacesToOpenconfig(hostname string, iface *cmdbif.Interface, loopback bool) (map[uint32]*openconfig.Interface_Subinterface, error) {
+	if len(iface.LogicalInterfaces) == 0 {
+		return nil, nil //nolint:nilnil // no logical interface in the CMDB: nothing to emit
+	}
+
+	subinterfaces := make(map[uint32]*openconfig.Interface_Subinterface, len(iface.LogicalInterfaces))
+	for _, logicalInterface := range iface.LogicalInterfaces {
+		subinterface, err := SubinterfaceToOpenconfig(hostname, logicalInterface, loopback, iface.ManagementRoutes[*logicalInterface.Index])
+		if err != nil {
+			return nil, err
+		}
+		subinterfaces[*logicalInterface.Index] = subinterface
+	}
+	return subinterfaces, nil
+}
+
 // SubinterfaceToOpenconfig converts one CMDB logical interface to an OpenConfig subinterface.
 // OpenConfig path: /interfaces/interface/subinterfaces/subinterface/.
-func SubinterfaceToOpenconfig(hostname string, logicalInterface *cmdbif.LogicalInterface) (*openconfig.Interface_Subinterface, error) {
+//
+// loopback tells whether the parent interface is a loopback, managementRoutes
+// are the management routes attached to the logical interface: the forced
+// ones are emitted on its IPv4 container.
+func SubinterfaceToOpenconfig(hostname string, logicalInterface *cmdbif.LogicalInterface, loopback bool, managementRoutes []*cmdbif.ManagementRoute) (*openconfig.Interface_Subinterface, error) {
 	name := logicalInterface.Name()
+
+	// The MTU of the logical unit 0 is the MTU of the interface, see interfaceMtu.
+	var mtu *uint16
+	if *logicalInterface.Index != 0 && logicalInterface.Mtu != 0 {
+		value, err := mtuToOpenconfig(hostname, logicalInterface)
+		if err != nil {
+			return nil, err
+		}
+		mtu = &value
+		if logicalInterface.IPv4Address == nil && logicalInterface.IPv6Address == nil {
+			log.Warn().Msgf("MTU %d on logical interface %s of %s cannot be emitted: no address family and not unit 0", value, name, hostname)
+		}
+	}
 
 	subinterface := openconfig.Interface_Subinterface{
 		Index:   logicalInterface.Index,
@@ -24,7 +60,11 @@ func SubinterfaceToOpenconfig(hostname string, logicalInterface *cmdbif.LogicalI
 	}
 
 	if logicalInterface.IPv4Address != nil {
-		ipv4, err := ipv4ToOpenconfig(hostname, name, logicalInterface)
+		forcedRoutes, err := forcedRoutesToOpenconfig(hostname, name, managementRoutes)
+		if err != nil {
+			return nil, err
+		}
+		ipv4, err := ipv4ToOpenconfig(hostname, name, logicalInterface, loopback, mtu, forcedRoutes)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +72,7 @@ func SubinterfaceToOpenconfig(hostname string, logicalInterface *cmdbif.LogicalI
 	}
 
 	if logicalInterface.IPv6Address != nil {
-		ipv6, err := ipv6ToOpenconfig(hostname, name, logicalInterface)
+		ipv6, err := ipv6ToOpenconfig(hostname, name, logicalInterface, loopback, mtu)
 		if err != nil {
 			return nil, err
 		}
@@ -42,9 +82,18 @@ func SubinterfaceToOpenconfig(hostname string, logicalInterface *cmdbif.LogicalI
 	return &subinterface, nil
 }
 
+// Host prefix lengths, the only ones that make sense on a loopback.
+// Loopback addresses are allocated from pools in the IPAM and the CMDB records
+// them with the pool mask (/21, /24, ...), which is not what the interface
+// must be configured with.
+const (
+	ipv4HostPrefixLength uint8 = 32
+	ipv6HostPrefixLength uint8 = 128
+)
+
 // ipv4ToOpenconfig converts the IPv4 address of a CMDB logical interface.
 // OpenConfig path: /interfaces/interface/subinterfaces/subinterface/ipv4/.
-func ipv4ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.LogicalInterface) (*openconfig.Interface_Subinterface_Ipv4, error) {
+func ipv4ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.LogicalInterface, loopback bool, mtu *uint16, forcedRoutes []string) (*openconfig.Interface_Subinterface_Ipv4, error) {
 	address := logicalInterface.IPv4Address
 
 	if address.Family != 4 || address.Address.IP.To4() == nil || address.Address.Netmask < 0 || address.Address.Netmask > 32 {
@@ -53,6 +102,9 @@ func ipv4ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.Log
 
 	ip := address.Address.IP.String()
 	prefixLength := uint8(address.Address.Netmask)
+	if loopback {
+		prefixLength = ipv4HostPrefixLength
+	}
 
 	return &openconfig.Interface_Subinterface_Ipv4{
 		Address: map[string]*openconfig.Interface_Subinterface_Ipv4_Address{
@@ -61,12 +113,14 @@ func ipv4ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.Log
 				PrefixLength: &prefixLength,
 			},
 		},
+		Mtu:          mtu,
+		ForcedRoutes: forcedRoutes,
 	}, nil
 }
 
 // ipv6ToOpenconfig converts the IPv6 address of a CMDB logical interface.
 // OpenConfig path: /interfaces/interface/subinterfaces/subinterface/ipv6/.
-func ipv6ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.LogicalInterface) (*openconfig.Interface_Subinterface_Ipv6, error) {
+func ipv6ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.LogicalInterface, loopback bool, mtu *uint16) (*openconfig.Interface_Subinterface_Ipv6, error) {
 	address := logicalInterface.IPv6Address
 
 	if address.Family != 6 || address.Address.IP.To4() != nil || address.Address.Netmask < 0 || address.Address.Netmask > 128 {
@@ -75,6 +129,15 @@ func ipv6ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.Log
 
 	ip := address.Address.IP.String()
 	prefixLength := uint8(address.Address.Netmask)
+	if loopback {
+		prefixLength = ipv6HostPrefixLength
+	}
+
+	var ipv6Mtu *uint32
+	if mtu != nil {
+		value := uint32(*mtu)
+		ipv6Mtu = &value
+	}
 
 	return &openconfig.Interface_Subinterface_Ipv6{
 		Address: map[string]*openconfig.Interface_Subinterface_Ipv6_Address{
@@ -83,32 +146,8 @@ func ipv6ToOpenconfig(hostname string, name string, logicalInterface *cmdbif.Log
 				PrefixLength: &prefixLength,
 			},
 		},
+		Mtu: ipv6Mtu,
 	}, nil
-}
-
-// Host prefix lengths, the only ones that make sense on a loopback.
-const (
-	ipv4HostPrefixLength uint8 = 32
-	ipv6HostPrefixLength uint8 = 128
-)
-
-// applyLoopbackPrefixLength forces the host prefix length on the addresses of
-// a loopback subinterface. Loopback addresses are allocated from pools in the
-// IPAM and the CMDB records them with the pool mask (/21, /24, ...), which
-// is not what the interface must be configured with.
-func applyLoopbackPrefixLength(subinterface *openconfig.Interface_Subinterface) {
-	if subinterface.Ipv4 != nil {
-		for _, address := range subinterface.Ipv4.Address {
-			prefixLength := ipv4HostPrefixLength
-			address.PrefixLength = &prefixLength
-		}
-	}
-	if subinterface.Ipv6 != nil {
-		for _, address := range subinterface.Ipv6.Address {
-			prefixLength := ipv6HostPrefixLength
-			address.PrefixLength = &prefixLength
-		}
-	}
 }
 
 // switchedVlanToOpenconfig converts the 802.1Q attributes of a CMDB logical interface.
