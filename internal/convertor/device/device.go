@@ -218,7 +218,7 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("convert from DHCP relay to OpenConfig failed: %w", err)
 	}
 
-	interfacesConfig, networkInstanceInterfaces, err := ifconvertors.InterfacesToOpenconfig(d.Dcim.Hostname, d.Interfaces, d.AFKEnabled)
+	interfacesConfig, networkInstanceInterfaces, err := ifconvertors.InterfacesToOpenconfig(d.Dcim.Hostname, d.Interfaces)
 	if err != nil {
 		return fmt.Errorf("convert from Interfaces to OpenConfig failed: %w", err)
 	}
