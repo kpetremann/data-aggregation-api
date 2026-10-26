@@ -61,6 +61,7 @@ type Device struct {
 	CommunityLists  []*routingpolicy.CommunityList
 	RoutePolicies   []*routingpolicy.RoutePolicy
 	Interfaces      []*cmdbif.Interface
+	PortLayout      cmdbif.PortLayoutTable
 	AFKEnabled      bool
 
 	// Hwsku and SONiCType are DEVICE_METADATA's hwsku and type, empty when
@@ -184,6 +185,7 @@ func NewDevice(dcimInfo *dcim.NetworkDevice, devicesData *repository.AssetsPerDe
 	if !ok {
 		log.Warn().Msgf("no port layout found for %s (device type %d, role %d)", dcimInfo.Hostname, layoutKey.DeviceTypeID, layoutKey.RoleID)
 	}
+	device.PortLayout = portLayout
 
 	neighbors, ok := devicesData.Neighbors[dcimInfo.Hostname]
 	if !ok {
@@ -226,7 +228,7 @@ func (d *Device) Generateconfigs() error {
 		return fmt.Errorf("convert from DNS to OpenConfig failed: %w", err)
 	}
 
-	relayAgentConfig, err := dhcprelayconvertors.DHCPRelayToOpenConfig(d.DHCPRelays)
+	relayAgentConfig, err := dhcprelayconvertors.DHCPRelayToOpenConfig(d.DHCPRelays, d.PortLayout)
 	if err != nil {
 		return fmt.Errorf("convert from DHCP relay to OpenConfig failed: %w", err)
 	}
